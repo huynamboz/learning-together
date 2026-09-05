@@ -1,6 +1,6 @@
 export default () => ({
   nodeEnv: process.env.NODE_ENV ?? 'development',
-  port: Number(process.env.PORT ?? 3000),
+  port: Number(process.env.PORT ?? 3010),
   databaseUrl: process.env.DATABASE_URL,
   redisUrl: process.env.REDIS_URL,
   jwt: {
@@ -8,7 +8,7 @@ export default () => ({
     accessTtl: process.env.JWT_ACCESS_TTL ?? '15m',
     refreshTtlDays: Number(process.env.JWT_REFRESH_TTL_DAYS ?? 30)
   },
-  appOrigin: process.env.APP_ORIGIN ?? 'http://localhost:3001',
+  appOrigin: process.env.APP_ORIGIN ?? 'http://localhost:3011',
   storage: {
     provider: process.env.STORAGE_PROVIDER ?? 'local',
     bucket: process.env.STORAGE_BUCKET ?? 'toeic-web',

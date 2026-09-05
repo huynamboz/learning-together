@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { countWords } from '~/utils/learning';
 const { request, accessToken } = useAppApi();
 const body = ref(''); const submitting = ref(false); const status = ref(''); const result = ref<{ submissionId?: string; status?: string; creditsRemaining?: number } | null>(null);
-const words = computed(() => body.value.trim() ? body.value.trim().split(/\s+/u).length : 0);
+const words = computed(() => countWords(body.value));
 async function submit() { if (!body.value.trim() || submitting.value) return; submitting.value = true; status.value = ''; try { if (accessToken.value) result.value = await request('/writing/submissions', { method: 'POST', body: { part: 1, body: body.value } }); else result.value = { status: 'GRADING' }; status.value = 'Bài viết đã được gửi. Đậu sẽ trả feedback theo tiêu chí TOEIC.'; } catch { status.value = 'Chưa gửi được bài. Kiểm tra phiên đăng nhập rồi thử lại nhé.'; } finally { submitting.value = false; } }
 </script>
 

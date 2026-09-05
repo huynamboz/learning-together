@@ -7,6 +7,7 @@ type ApiOptions = {
 export function useAppApi() {
   const config = useRuntimeConfig();
   const accessToken = useCookie<string | null>('dau_access_token', { sameSite: 'lax' });
+  const refreshToken = useCookie<string | null>('dau_refresh_token', { sameSite: 'lax' });
 
   async function request<T>(path: string, options: ApiOptions = {}) {
     const headers: Record<string, string> = {};
@@ -14,5 +15,5 @@ export function useAppApi() {
     return $fetch<T>(`${config.public.apiBase}${path}`, { ...options, body: options.body, headers });
   }
 
-  return { accessToken, request };
+  return { accessToken, refreshToken, request };
 }

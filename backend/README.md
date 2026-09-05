@@ -12,7 +12,9 @@ npm run start:dev
 
 Nếu port `5432` hoặc `6379` đang được dùng, chạy `POSTGRES_PORT=15432 REDIS_PORT=16379 docker compose up -d` và đổi port trong `DATABASE_URL`/`REDIS_URL`.
 
-API: `http://localhost:3000/api/v1`; Swagger: `http://localhost:3000/docs`; health: `GET /api/v1/health`.
+API: `http://localhost:3010/api/v1`; Swagger: `http://localhost:3010/docs`; health: `GET /api/v1/health`.
+
+Public content read: `GET /api/v1/content?type=LISTENING&part=1` or `GET /api/v1/content/:slug`.
 
 ## Storage
 
