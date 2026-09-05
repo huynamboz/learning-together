@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { isAnswerCorrect } from './answer-evaluator';
-import { RecordAttemptDto } from './learning.dto';
+import { RecordAttemptDto, RecordStudySessionDto } from './learning.dto';
 
 @Injectable()
 export class LearningService {
@@ -26,5 +26,14 @@ export class LearningService {
       this.prisma.questionAttempt.count({ where: { userId, isCorrect: false } })
     ]);
     return { total: aggregate, correct, wrong, accuracy: aggregate ? Math.round((correct / aggregate) * 100) : 0 };
+  }
+
+  async recordStudySession(userId: string, dto: RecordStudySessionDto) {
+    const endedAt = new Date();
+    const startedAt = new Date(endedAt.getTime() - dto.durationSeconds * 1000);
+    return this.prisma.studySession.create({
+      data: { userId, surface: dto.surface, startedAt, endedAt, durationSeconds: dto.durationSeconds },
+      select: { id: true, surface: true, durationSeconds: true, endedAt: true }
+    });
   }
 }

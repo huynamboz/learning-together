@@ -17,4 +17,7 @@ export class CommunityController {
 
   @Post('posts/:id/comments')
   comment(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Body() dto: CreateCommentDto) { return this.service.comment(request.user!.id, id, dto); }
+
+  @Get('posts/:id/comments')
+  comments(@Param('id') id: string, @Query('limit') limit?: string) { return this.service.comments(id, Number(limit ?? 50)); }
 }

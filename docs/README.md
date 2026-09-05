@@ -23,6 +23,8 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 - [Dashboard, mục tiêu và chat nổi](./13-dashboard-chat.md)
 - [Master implementation plan](./implementation-plan/00-master-plan.md)
 - [Phase 9 — Operational data and browser verification](./implementation-plan/phase-9-operational-data-and-browser-verification.md)
+- [Phase 10 — Content, engagement and learner-history plan](./implementation-plan/phase-10-content-engagement-plan.md)
+- [Phase 10 — Content and engagement browser verification](./implementation-plan/phase-10-browser-verification.md)
 - [Tài khoản, gói học và affiliate](./09-account-and-monetization.md)
 - [Blog, giới thiệu và feedback](./10-blog-about-feedback.md)
 - [Pháp lý, footer và tương thích route](./11-legal-and-navigation.md)

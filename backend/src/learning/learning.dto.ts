@@ -1,5 +1,5 @@
 import { AttemptContext } from '@prisma/client';
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class RecordAttemptDto {
   @IsUUID()
@@ -21,4 +21,14 @@ export class RecordAttemptDto {
   @Min(0)
   @Max(3600000)
   timeMs?: number;
+}
+
+export class RecordStudySessionDto {
+  @IsIn(['listening', 'reading', 'video', 'vocabulary', 'mock-test', 'writing'])
+  surface!: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(86400)
+  durationSeconds!: number;
 }

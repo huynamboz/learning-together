@@ -12,6 +12,9 @@ export class WritingController {
   @Post()
   submit(@Req() request: AuthenticatedRequest, @Body() dto: SubmitWritingDto) { return this.service.submit(request.user!.id, dto); }
 
+  @Get()
+  list(@Req() request: AuthenticatedRequest) { return this.service.list(request.user!.id); }
+
   @Get(':id')
   get(@Req() request: AuthenticatedRequest, @Param('id') id: string) { return this.service.get(request.user!.id, id); }
 }

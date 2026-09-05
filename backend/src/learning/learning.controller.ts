@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { AuthenticatedRequest } from '@/access/roles.guard';
-import { RecordAttemptDto } from './learning.dto';
+import { RecordAttemptDto, RecordStudySessionDto } from './learning.dto';
 import { LearningService } from './learning.service';
 
 @Controller('learning')
@@ -11,6 +11,9 @@ export class LearningController {
 
   @Post('attempts')
   record(@Req() request: AuthenticatedRequest, @Body() dto: RecordAttemptDto) { return this.service.recordAttempt(request.user!.id, dto); }
+
+  @Post('study-sessions')
+  recordStudySession(@Req() request: AuthenticatedRequest, @Body() dto: RecordStudySessionDto) { return this.service.recordStudySession(request.user!.id, dto); }
 
   @Get('progress')
   getProgress(@Req() request: AuthenticatedRequest) { return this.service.progress(request.user!.id); }

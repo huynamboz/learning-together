@@ -24,6 +24,15 @@ export class WritingService {
 
   get(userId: string, id: string) { return this.prisma.writingSubmission.findFirst({ where: { id, userId }, include: { grade: true } }).then((submission) => { if (!submission) throw new NotFoundException('Không tìm thấy bài viết.'); return submission; }); }
 
+  list(userId: string) {
+    return this.prisma.writingSubmission.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: { id: true, part: true, wordCount: true, status: true, submittedAt: true, createdAt: true, grade: { select: { overall: true, feedback: true, createdAt: true } } }
+    });
+  }
+
   private async balance(tx: Prisma.TransactionClient, userId: string): Promise<number> {
     const result = await tx.aiCreditLedger.aggregate({ where: { userId }, _sum: { amount: true } });
     return result._sum.amount ?? 0;
