@@ -1,0 +1,1 @@
+<template><ComingSoonPage eyebrow="LISTENING LAB" title="Nghe để bắt nhịp." description="Không gian luyện nghe theo part, dictation và transcript sẽ được kết nối với nội dung học thật trong phase tiếp theo." accent="leaf" /></template>

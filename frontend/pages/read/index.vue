@@ -1,0 +1,1 @@
+<template><ComingSoonPage eyebrow="READING LAB" title="Đọc nhanh, hiểu sâu." description="Lộ trình Reading và Grammar đang chờ lớp dữ liệu bài học đầu tiên. Bạn vẫn có thể quay về dashboard bất cứ lúc nào." /></template>

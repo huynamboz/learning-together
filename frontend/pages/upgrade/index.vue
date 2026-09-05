@@ -1,0 +1,1 @@
+<template><ComingSoonPage eyebrow="ĐẬU TOEIC PRO" title="Mở khoá nhịp học riêng." description="Các gói nâng cấp, quyền lợi và thanh toán sẽ được tích hợp sau khi luồng billing hoàn thiện." /></template>

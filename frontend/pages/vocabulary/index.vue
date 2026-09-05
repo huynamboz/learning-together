@@ -1,0 +1,1 @@
+<template><ComingSoonPage eyebrow="VOCABULARY" title="Từ vựng có nhịp ôn." description="Bộ từ 600 TOEIC và hàng đợi ôn tập lặp lại ngắt quãng sẽ được đưa vào ở phase learner experience." accent="bean" /></template>

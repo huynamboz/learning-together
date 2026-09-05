@@ -1,0 +1,1 @@
+<template><ComingSoonPage eyebrow="LEADERBOARD" title="Tiến bộ có bạn đồng hành." description="Bảng xếp hạng XP và hoạt động học sẽ giúp bạn nhìn thấy nhịp tiến bộ của mình." accent="bean" /></template>
