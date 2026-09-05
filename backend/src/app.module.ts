@@ -14,6 +14,9 @@ import { LearningModule } from './learning/learning.module';
 import { VocabularyModule } from './vocabulary/vocabulary.module';
 import { ExamModule } from './exams/exam.module';
 import { WritingModule } from './writing/writing.module';
+import { SocialModule } from './social/social.module';
+import { AccountModule } from './account/account.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -27,7 +30,10 @@ import { WritingModule } from './writing/writing.module';
     LearningModule,
     VocabularyModule,
     ExamModule,
-    WritingModule
+    WritingModule,
+    SocialModule,
+    AccountModule,
+    BillingModule
   ],
   providers: [{ provide: APP_GUARD, useClass: RolesGuard }]
 })

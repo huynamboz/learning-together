@@ -139,6 +139,50 @@ enum CreditEntryType {
   ADJUST
 }
 
+enum PostStatus {
+  PUBLISHED
+  HIDDEN
+  DELETED
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationType {
+  SYSTEM
+  VOCABULARY_REVIEW
+  STREAK
+  GOAL
+  COMMUNITY
+  BILLING
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+enum CommissionStatus {
+  PENDING
+  AVAILABLE
+  CANCELED
+  PAID
+}
+
+enum WithdrawalStatus {
+  REQUESTED
+  PROCESSING
+  PAID
+  REJECTED
+}
+
 model User {
   id                 String              @id @default(uuid()) @db.Uuid
   email              String              @unique @db.VarChar(320)
@@ -636,4 +680,187 @@ model AiCreditLedger {
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+model Post {
+  id           String     @id @default(uuid()) @db.Uuid
+  authorId     String     @db.Uuid
+  type         String     @db.VarChar(40)
+  content      String     @db.Text
+  tags         Json?
+  status       PostStatus @default(PUBLISHED)
+  likeCount    Int        @default(0)
+  commentCount Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([status, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model Comment {
+  id        String     @id @default(uuid()) @db.Uuid
+  postId    String     @db.Uuid
+  authorId  String     @db.Uuid
+  parentId  String?    @db.Uuid
+  content   String     @db.Text
+  status    PostStatus @default(PUBLISHED)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([postId, status, createdAt])
+}
+
+model Reaction {
+  userId    String   @db.Uuid
+  postId    String   @db.Uuid
+  kind      String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId, kind])
+}
+
+model Report {
+  id         String       @id @default(uuid()) @db.Uuid
+  reporterId String       @db.Uuid
+  targetType String       @db.VarChar(32)
+  targetId   String       @db.Uuid
+  reason     String       @db.Text
+  status     ReportStatus @default(OPEN)
+  resolution String?
+  createdAt  DateTime     @default(now())
+  resolvedAt DateTime?
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+}
+
+model FriendRequest {
+  id          String   @id @default(uuid()) @db.Uuid
+  requesterId String   @db.Uuid
+  addresseeId String   @db.Uuid
+  status      String   @default("PENDING") @db.VarChar(20)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid()) @db.Uuid
+  authorId    String   @db.Uuid
+  recipientId String?  @db.Uuid
+  content     String   @db.Text
+  replyToId   String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([recipientId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  body      String           @db.Text
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+model XpLedger {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  amount      Int
+  source      String   @db.VarChar(80)
+  referenceId String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model DailyGoal {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  targetType String   @db.VarChar(32)
+  target     Int
+  achieved   Int      @default(0)
+  day        DateTime @db.Date
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, targetType, day])
+  @@index([userId, day])
+}
+
+model Order {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @db.Uuid
+  planCode    PlanCode
+  amount      Int
+  currency    String      @default("VND") @db.VarChar(3)
+  status      OrderStatus @default(PENDING)
+  provider    String      @db.VarChar(40)
+  providerRef String?     @unique @db.VarChar(255)
+  createdAt   DateTime    @default(now())
+  paidAt      DateTime?
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model PaymentWebhookEvent {
+  id              String    @id @default(uuid()) @db.Uuid
+  provider        String    @db.VarChar(40)
+  providerEventId String    @db.VarChar(255)
+  payload         Json
+  processedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@unique([provider, providerEventId])
+}
+
+model ReferralAttribution {
+  id             String   @id @default(uuid()) @db.Uuid
+  code           String   @db.VarChar(80)
+  visitorHash    String   @db.VarChar(128)
+  referredUserId String?  @db.Uuid
+  firstTouchAt   DateTime @default(now())
+  expiresAt      DateTime
+
+  @@index([code, expiresAt])
+  @@index([referredUserId])
+}
+
+model CommissionLedger {
+  id             String           @id @default(uuid()) @db.Uuid
+  referrerId     String           @db.Uuid
+  referredUserId String?          @db.Uuid
+  orderId        String?          @db.Uuid
+  rate           Float
+  amount         Int
+  status         CommissionStatus @default(PENDING)
+  availableAt    DateTime
+  createdAt      DateTime         @default(now())
+
+  @@index([referrerId, status, availableAt])
+}
+
+model WithdrawalRequest {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  amount         Int
+  status         WithdrawalStatus @default(REQUESTED)
+  bankAccountRef String?
+  note           String?
+  createdAt      DateTime         @default(now())
+  processedAt    DateTime?
+
+  @@index([userId, status, createdAt])
 }
