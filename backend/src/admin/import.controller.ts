@@ -2,7 +2,7 @@ import { RoleName } from '@prisma/client';
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { IsArray, IsObject, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { AuthenticatedRequest } from '@/access/roles.guard';
+import { AuthenticatedRequest, RolesGuard } from '@/access/roles.guard';
 import { Roles } from '@/access/roles.decorator';
 import { ImportRow, ImportService } from './import.service';
 
@@ -21,7 +21,7 @@ class CreateImportDto {
 }
 
 @Controller('admin/imports')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(RoleName.CONTENT_EDITOR, RoleName.ADMIN, RoleName.SUPER_ADMIN)
 export class ImportController {
   constructor(private readonly service: ImportService) {}

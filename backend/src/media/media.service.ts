@@ -7,7 +7,7 @@ import { MediaStatus, Prisma, StorageProvider, UploadStatus } from '@prisma/clie
 import { PrismaService } from '@/database/prisma.service';
 import { ApiError } from '@/common/http/api-error';
 import { OBJECT_STORAGE } from './storage/storage.module';
-import type { ObjectStorage, StorageProviderName } from './storage/storage.types';
+import type { ObjectStorage } from './storage/storage.types';
 import { CreateUploadSessionDto } from './media.dto';
 
 const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'video/mp4', 'application/pdf', 'text/plain']);

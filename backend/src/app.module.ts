@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import configuration from './config/configuration';
 import { envValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
-import { RolesGuard } from './access/roles.guard';
 import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
 import { LearningModule } from './learning/learning.module';
@@ -18,6 +16,7 @@ import { SocialModule } from './social/social.module';
 import { AccountModule } from './account/account.module';
 import { BillingModule } from './billing/billing.module';
 import { ContentModule } from './content/content.module';
+import { PracticeModule } from './practice/practice.module';
 
 @Module({
   imports: [
@@ -35,8 +34,8 @@ import { ContentModule } from './content/content.module';
     SocialModule,
     AccountModule,
     BillingModule,
-    ContentModule
-  ],
-  providers: [{ provide: APP_GUARD, useClass: RolesGuard }]
+    ContentModule,
+    PracticeModule
+  ]
 })
 export class AppModule {}

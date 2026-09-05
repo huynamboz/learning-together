@@ -21,10 +21,10 @@ export class AuthService {
     private readonly config: ConfigService
   ) {}
 
-  async verifyPassword(email: string, password: string): Promise<{ id: string; email: string; roles: string[] }> {
+  async verifyPassword(email: string, password: string): Promise<{ id: string; email: string; displayName: string; plan: PlanCode; roles: string[] }> {
     const identity = await this.prisma.authIdentity.findFirst({
       where: { provider: 'PASSWORD', user: { email: email.toLowerCase(), status: 'ACTIVE' } },
-      include: { user: { include: { roles: { include: { role: true } } } } }
+      include: { user: { include: { roles: { include: { role: true } }, entitlements: { where: { status: 'ACTIVE' }, orderBy: { startsAt: 'desc' }, take: 1, include: { plan: true } } } } }
     });
     if (!identity?.passwordHash || !(await argon2.verify(identity.passwordHash, password))) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng.');
@@ -32,6 +32,8 @@ export class AuthService {
     return {
       id: identity.user.id,
       email: identity.user.email,
+      displayName: identity.user.displayName,
+      plan: identity.user.entitlements[0]?.plan.code ?? PlanCode.FREE,
       roles: identity.user.roles.map(({ role }) => role.name)
     };
   }
@@ -60,17 +62,17 @@ export class AuthService {
 
   async refresh(refreshToken: string) {
     const tokenHash = this.hashToken(refreshToken);
-    const session = await this.prisma.session.findUnique({ where: { refreshTokenHash: tokenHash }, include: { user: { include: { roles: { include: { role: true } } } } } });
+    const session = await this.prisma.session.findUnique({ where: { refreshTokenHash: tokenHash }, include: { user: { include: { roles: { include: { role: true } }, entitlements: { where: { status: 'ACTIVE' }, orderBy: { startsAt: 'desc' }, take: 1, include: { plan: true } } } } } });
     if (!session || session.revokedAt || session.expiresAt.getTime() <= Date.now() || session.user.status !== 'ACTIVE') throw new UnauthorizedException('Refresh token không còn hợp lệ.');
     await this.prisma.session.update({ where: { id: session.id }, data: { revokedAt: new Date() } });
-    return this.createSession({ id: session.user.id, email: session.user.email, roles: session.user.roles.map(({ role }) => role.name) }, session.deviceId ?? undefined);
+    return this.createSession({ id: session.user.id, email: session.user.email, displayName: session.user.displayName, plan: session.user.entitlements[0]?.plan.code ?? PlanCode.FREE, roles: session.user.roles.map(({ role }) => role.name) }, session.deviceId ?? undefined);
   }
 
   async revoke(refreshToken: string): Promise<void> {
     await this.prisma.session.updateMany({ where: { refreshTokenHash: this.hashToken(refreshToken), revokedAt: null }, data: { revokedAt: new Date() } });
   }
 
-  private async createSession(user: { id: string; email: string; roles: string[] }, deviceId?: string) {
+  private async createSession(user: { id: string; email: string; displayName: string; plan: PlanCode; roles: string[] }, deviceId?: string) {
     const refreshToken = randomBytes(48).toString('base64url');
     const expiresAt = new Date(Date.now() + this.config.get<number>('jwt.refreshTtlDays', 30) * 86400000);
     await this.prisma.session.create({ data: { userId: user.id, deviceId, refreshTokenHash: this.hashToken(refreshToken), expiresAt } });

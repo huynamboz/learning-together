@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AiCreditLedger, CreditEntryType, Prisma, WritingStatus } from '@prisma/client';
+import { CreditEntryType, Prisma, WritingStatus } from '@prisma/client';
 import { PrismaService } from '@/database/prisma.service';
 import { ApiError } from '@/common/http/api-error';
 import { SubmitWritingDto } from './writing.dto';

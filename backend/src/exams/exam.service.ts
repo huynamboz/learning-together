@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ExamSessionStatus, Prisma } from '@prisma/client';
+import { ExamSessionStatus } from '@prisma/client';
 import { PrismaService } from '@/database/prisma.service';
 import { ApiError } from '@/common/http/api-error';
 import { SaveExamAnswerDto, StartExamDto } from './exam.dto';

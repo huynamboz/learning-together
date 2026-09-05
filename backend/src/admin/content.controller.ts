@@ -1,13 +1,13 @@
 import { ContentStatus, ContentType, RoleName } from '@prisma/client';
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { AuthenticatedRequest } from '@/access/roles.guard';
+import { AuthenticatedRequest, RolesGuard } from '@/access/roles.guard';
 import { Roles } from '@/access/roles.decorator';
 import { CreateContentDto } from './content.dto';
 import { ContentAdminService } from './content.service';
 
 @Controller('admin/content')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(RoleName.CONTENT_EDITOR, RoleName.ADMIN, RoleName.SUPER_ADMIN)
 export class ContentAdminController {
   constructor(private readonly service: ContentAdminService) {}

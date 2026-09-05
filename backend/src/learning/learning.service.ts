@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/database/prisma.service';
-import { ApiError } from '@/common/http/api-error';
 import { isAnswerCorrect } from './answer-evaluator';
 import { RecordAttemptDto } from './learning.dto';
 

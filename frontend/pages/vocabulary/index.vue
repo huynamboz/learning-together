@@ -4,6 +4,22 @@ const cards = ref([{ id: '', word: 'allocate', meaning: 'phân bổ', example: '
 const index = ref(0); const revealed = ref(false); const reviewed = ref(0); const busy = ref(false); const notice = ref('');
 const current = computed(() => cards.value[index.value]);
 
+function firstText(value: unknown, key: string) {
+  if (!Array.isArray(value) || !value[0] || typeof value[0] !== 'object') return '';
+  const item = value[0] as Record<string, unknown>;
+  return typeof item[key] === 'string' ? item[key] : '';
+}
+onMounted(async () => {
+  if (!accessToken.value) return;
+  try {
+    const queue = await request<Array<{ entry: { id: string; lemma: string; meanings: unknown; examples: unknown; partOfSpeech?: string | null } }>>('/vocabulary/review-queue', { query: { limit: 20 } });
+    if (queue.length) {
+      cards.value = queue.map(({ entry }) => ({ id: entry.id, word: entry.lemma, meaning: firstText(entry.meanings, 'vi') || 'Đang cập nhật nghĩa', example: firstText(entry.examples, 'en'), tag: entry.partOfSpeech ?? 'TOEIC' }));
+      notice.value = 'Đã tải hàng đợi ôn tập của bạn.';
+    }
+  } catch { notice.value = 'Không tải được hàng đợi; bạn vẫn có thể ôn bộ thẻ mẫu.'; }
+});
+
 async function review(rating: 'again' | 'hard' | 'good' | 'easy') {
   if (!current.value || busy.value) return;
   busy.value = true;

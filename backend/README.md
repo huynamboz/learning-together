@@ -15,6 +15,17 @@ Nếu port `5432` hoặc `6379` đang được dùng, chạy `POSTGRES_PORT=1543
 API: `http://localhost:3010/api/v1`; Swagger: `http://localhost:3010/docs`; health: `GET /api/v1/health`.
 
 Public content read: `GET /api/v1/content?type=LISTENING&part=1` or `GET /api/v1/content/:slug`.
+Practice catalog: `GET /api/v1/practice/questions?kind=GRAMMAR&part=5` (never returns answer keys) and `GET /api/v1/mock-tests`.
+
+## Local demo seed
+
+Seed cần password admin qua environment, nên không có credential nào được commit:
+
+```bash
+SEED_ADMIN_PASSWORD='choose-a-long-local-password' SEED_LEARNER_PASSWORD='choose-a-second-long-local-password' npm run seed
+```
+
+Seed tạo admin, learner demo, public content, question, mini mock test, SRS cards, AI credits và community post để kiểm tra end-to-end.
 
 ## Storage
 

@@ -22,6 +22,7 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 - [Writing](./12-writing.md)
 - [Dashboard, mục tiêu và chat nổi](./13-dashboard-chat.md)
 - [Master implementation plan](./implementation-plan/00-master-plan.md)
+- [Phase 9 — Operational data and browser verification](./implementation-plan/phase-9-operational-data-and-browser-verification.md)
 - [Tài khoản, gói học và affiliate](./09-account-and-monetization.md)
 - [Blog, giới thiệu và feedback](./10-blog-about-feedback.md)
 - [Pháp lý, footer và tương thích route](./11-legal-and-navigation.md)
@@ -46,7 +47,7 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 
 ## Implementation planning
 
-Bộ planning trước khi coding nằm trong [docs/implementation-plan](./implementation-plan/00-master-plan.md), gồm requirements/route map, backend architecture, domain model, API contract, storage abstraction, admin operations, design system, frontend IA, testing, security/devops và phase/commit checklist. Chưa có source code implementation ở thời điểm này.
+Bộ planning nằm trong [docs/implementation-plan](./implementation-plan/00-master-plan.md), gồm requirements/route map, backend architecture, domain model, API contract, storage abstraction, admin operations, design system, frontend IA, testing, security/devops và phase/commit checklist. Các phase đã triển khai có browser verification riêng; log mới nhất là [Phase 9](./implementation-plan/phase-9-operational-data-and-browser-verification.md).
 
 ## Ghi chú triển khai
 
