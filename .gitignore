@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.nuxt/
+.output/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+backend/storage/
+backend/uploads/
+backend/prisma/dev.db

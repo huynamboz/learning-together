@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum RoleName {
+  LEARNER
+  CONTENT_EDITOR
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum DeviceType {
+  COMPUTER
+  PHONE
+  TABLET
+  OTHER
+}
+
+enum AuthProvider {
+  PASSWORD
+  GOOGLE
+}
+
+enum PlanCode {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum EntitlementStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+model User {
+  id              String         @id @default(uuid()) @db.Uuid
+  email           String         @unique @db.VarChar(320)
+  displayName     String         @db.VarChar(120)
+  avatarAssetId   String?        @db.Uuid
+  status          UserStatus     @default(ACTIVE)
+  timezone        String         @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  locale          String         @default("vi-VN") @db.VarChar(16)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  identities      AuthIdentity[]
+  sessions        Session[]
+  devices         Device[]
+  roles           UserRole[]
+  entitlements    Entitlement[]
+  auditLogs       AuditLog[]
+
+  @@index([status, createdAt])
+}
+
+model AuthIdentity {
+  id                String       @id @default(uuid()) @db.Uuid
+  userId            String       @db.Uuid
+  provider          AuthProvider
+  providerAccountId String       @db.VarChar(255)
+  passwordHash      String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  refreshTokenHash String    @unique @db.VarChar(255)
+  deviceId         String?   @db.Uuid
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  lastSeenAt       DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt])
+}
+
+model Device {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @db.Uuid
+  deviceHash  String     @db.VarChar(128)
+  type        DeviceType
+  browser     String?    @db.VarChar(120)
+  label       String?    @db.VarChar(120)
+  firstSeenAt DateTime   @default(now())
+  lastSeenAt  DateTime   @default(now())
+  revokedAt   DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceHash])
+  @@index([userId, revokedAt])
+}
+
+model Role {
+  id    String     @id @default(uuid()) @db.Uuid
+  name  RoleName   @unique
+  users UserRole[]
+}
+
+model UserRole {
+  userId String @db.Uuid
+  roleId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model Plan {
+  id           String         @id @default(uuid()) @db.Uuid
+  code         PlanCode       @unique
+  displayName  String         @db.VarChar(80)
+  entitlements Entitlement[]
+}
+
+model Entitlement {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @db.Uuid
+  planId      String             @db.Uuid
+  status      EntitlementStatus  @default(ACTIVE)
+  startsAt    DateTime           @default(now())
+  expiresAt   DateTime?
+  sourceOrder String?            @db.Uuid
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        Plan               @relation(fields: [planId], references: [id])
+
+  @@index([userId, status, startsAt, expiresAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String   @db.VarChar(120)
+  entity     String   @db.VarChar(120)
+  entityId   String?  @db.VarChar(120)
+  requestId  String?  @db.VarChar(80)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId, createdAt])
+  @@index([actorId, createdAt])
+}

@@ -33,6 +33,20 @@ Playwright against seeded environment:
 11. local/cloud upload happy and failure paths;
 12. mobile viewport and keyboard-only critical flows.
 
+### Browser verification bắt buộc sau mỗi frontend phase
+
+Sau Phase 5, 6 và 7, phải mở runtime bằng browser và ghi evidence trước khi commit:
+
+- desktop viewport: navigation, primary flow, không bị cắt hoặc chồng nội dung;
+- mobile viewport: responsive navigation, touch targets, không có horizontal overflow;
+- keyboard-only: tab order, visible focus, Enter/Escape, form errors;
+- visual states: loading, empty, disabled, success, API error, offline/retry;
+- interaction audit: mỗi button/link/menu visible đều có hành vi đúng hoặc trạng thái “coming soon” rõ ràng;
+- practice flow: answer, next, save, feedback, progress and return navigation;
+- upload/admin flow: drag/drop, progress, cancel/retry, validation and publish preview.
+
+Evidence gồm URL/runtime commit, viewport đã kiểm tra, screenshot hoặc browser notes, lỗi phát hiện và trạng thái đã sửa. Chỉ commit frontend phase sau khi manual browser verification và Playwright smoke cùng pass.
+
 ## 2. Security tests
 
 - unauthorized IDOR on every user-owned resource;

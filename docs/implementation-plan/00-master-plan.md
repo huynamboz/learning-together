@@ -36,6 +36,7 @@ Các feature đã được quan sát ở website đang chạy được ghi trong
 - Immutable history: kết quả test, điểm AI và ledger XP/credits phải audit được; không overwrite dữ liệu lịch sử.
 - Idempotent: submit answer, grading, upload finalize, payment webhook và leaderboard aggregation đều có idempotency key.
 - Progressive delivery: mỗi phase có acceptance criteria, test gate và commit riêng.
+- Browser verification: sau mỗi phase frontend phải chạy runtime thật và kiểm tra E2E trong browser ở desktop/mobile; không xem build xanh là đủ.
 
 ## 4. Quyết định công nghệ mặc định
 
@@ -101,6 +102,7 @@ Một feature chỉ được xem là xong khi:
 - unit test cho rule, integration test cho persistence và e2e test cho flow quan trọng;
 - event/audit/analytics cần thiết đã được ghi;
 - UI responsive, keyboard accessible, reduced-motion compliant;
+- frontend phase đã được mở và verify trong browser với flow chính, responsive breakpoint, mọi trạng thái async và các nút tương tác;
 - docs/API schema được cập nhật;
 - CI pass và phase được commit bằng message thống nhất.
 
