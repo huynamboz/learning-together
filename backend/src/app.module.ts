@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
@@ -8,9 +8,12 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { RolesGuard } from './access/roles.guard';
-import { RequestIdMiddleware } from './common/http/request-id.middleware';
 import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
+import { LearningModule } from './learning/learning.module';
+import { VocabularyModule } from './vocabulary/vocabulary.module';
+import { ExamModule } from './exams/exam.module';
+import { WritingModule } from './writing/writing.module';
 
 @Module({
   imports: [
@@ -20,12 +23,12 @@ import { AdminModule } from './admin/admin.module';
     HealthModule,
     AuthModule,
     MediaModule,
-    AdminModule
+    AdminModule,
+    LearningModule,
+    VocabularyModule,
+    ExamModule,
+    WritingModule
   ],
   providers: [{ provide: APP_GUARD, useClass: RolesGuard }]
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(RequestIdMiddleware).forRoutes({ path: '*path', method: RequestMethod.ALL });
-  }
-}
+export class AppModule {}

@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { randomUUID } from 'node:crypto';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -6,10 +7,16 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/http/http-exception.filter';
+import { requestContext } from './common/http/request-context';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+  app.use((request: { header: (name: string) => string | undefined }, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
+    const requestId = request.header('x-request-id') ?? randomUUID();
+    response.setHeader('x-request-id', requestId);
+    requestContext.run({ requestId }, next);
+  });
   app.use(helmet());
   app.enableCors({ origin: process.env.APP_ORIGIN?.split(',') ?? [], credentials: true });
   app.setGlobalPrefix('api/v1');

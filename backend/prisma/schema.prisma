@@ -95,28 +95,81 @@ enum ImportStatus {
   CANCELED
 }
 
+enum QuestionKind {
+  LISTENING
+  READING
+  GRAMMAR
+  VOCABULARY
+}
+
+enum AttemptContext {
+  PRACTICE
+  EXAM
+  DICTATION
+  VOCABULARY_REVIEW
+  GAME
+}
+
+enum SrsState {
+  NEW
+  LEARNING
+  REVIEW
+  MASTERED
+}
+
+enum ExamSessionStatus {
+  ACTIVE
+  SUBMITTED
+  EXPIRED
+  ABANDONED
+}
+
+enum WritingStatus {
+  DRAFT
+  SUBMITTED
+  GRADING
+  GRADED
+  FAILED
+}
+
+enum CreditEntryType {
+  GRANT
+  CONSUME
+  EXPIRE
+  ADJUST
+}
+
 model User {
-  id              String           @id @default(uuid()) @db.Uuid
-  email           String           @unique @db.VarChar(320)
-  displayName     String           @db.VarChar(120)
-  avatarAssetId   String?          @db.Uuid
-  status          UserStatus       @default(ACTIVE)
-  timezone        String           @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
-  locale          String           @default("vi-VN") @db.VarChar(16)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  identities      AuthIdentity[]
-  sessions        Session[]
-  devices         Device[]
-  roles           UserRole[]
-  entitlements    Entitlement[]
-  auditLogs       AuditLog[]
-  ownedMedia      MediaAsset[]     @relation("MediaOwner")
-  uploadSessions  UploadSession[]  @relation("UploadCreator")
-  createdContent  ContentItem[]    @relation("ContentCreator")
-  updatedContent  ContentItem[]    @relation("ContentUpdater")
-  contentVersions ContentVersion[]
-  importBatches   ImportBatch[]
+  id                 String              @id @default(uuid()) @db.Uuid
+  email              String              @unique @db.VarChar(320)
+  displayName        String              @db.VarChar(120)
+  avatarAssetId      String?             @db.Uuid
+  status             UserStatus          @default(ACTIVE)
+  timezone           String              @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  locale             String              @default("vi-VN") @db.VarChar(16)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  identities         AuthIdentity[]
+  sessions           Session[]
+  devices            Device[]
+  roles              UserRole[]
+  entitlements       Entitlement[]
+  auditLogs          AuditLog[]
+  ownedMedia         MediaAsset[]        @relation("MediaOwner")
+  uploadSessions     UploadSession[]     @relation("UploadCreator")
+  createdContent     ContentItem[]       @relation("ContentCreator")
+  updatedContent     ContentItem[]       @relation("ContentUpdater")
+  contentVersions    ContentVersion[]
+  importBatches      ImportBatch[]
+  attempts           QuestionAttempt[]
+  questionProgress   QuestionProgress[]
+  notes              Note[]
+  savedItems         SavedItem[]
+  studySessions      StudySession[]
+  srsCards           SrsCard[]
+  examSessions       ExamSession[]
+  writingSubmissions WritingSubmission[]
+  creditEntries      AiCreditLedger[]
 
   @@index([status, createdAt])
 }
@@ -273,6 +326,7 @@ model ContentItem {
   createdBy      User             @relation("ContentCreator", fields: [createdById], references: [id])
   updatedBy      User?            @relation("ContentUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
   versions       ContentVersion[]
+  questions      Question[]
 
   @@index([type, status, part, level])
 }
@@ -317,4 +371,269 @@ model ImportItem {
 
   @@unique([batchId, rowNumber])
   @@index([batchId, status])
+}
+
+model Question {
+  id            String             @id @default(uuid()) @db.Uuid
+  contentItemId String?            @db.Uuid
+  kind          QuestionKind
+  part          Int?
+  level         Int?
+  prompt        Json
+  answerKey     String?
+  explanation   Json?
+  status        ContentStatus      @default(DRAFT)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  contentItem   ContentItem?       @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  options       QuestionOption[]
+  attempts      QuestionAttempt[]
+  progress      QuestionProgress[]
+  mockQuestions MockTestQuestion[]
+  examAnswers   ExamAnswer[]
+
+  @@index([kind, part, level, status])
+}
+
+model QuestionOption {
+  id         String   @id @default(uuid()) @db.Uuid
+  questionId String   @db.Uuid
+  key        String   @db.VarChar(8)
+  text       Json
+  sortOrder  Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, key])
+  @@index([questionId, sortOrder])
+}
+
+model QuestionAttempt {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @db.Uuid
+  questionId     String         @db.Uuid
+  context        AttemptContext
+  contextId      String?        @db.Uuid
+  selectedAnswer String?
+  isCorrect      Boolean
+  timeMs         Int?
+  answerVersion  Int            @default(1)
+  createdAt      DateTime       @default(now())
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question       Question       @relation(fields: [questionId], references: [id])
+
+  @@index([userId, questionId, createdAt])
+  @@index([userId, context, createdAt])
+}
+
+model QuestionProgress {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  questionId   String    @db.Uuid
+  seenCount    Int       @default(0)
+  correctCount Int       @default(0)
+  wrongCount   Int       @default(0)
+  lastSeenAt   DateTime?
+  nextReviewAt DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question     Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, nextReviewAt])
+}
+
+model Note {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  targetType String   @db.VarChar(40)
+  targetId   String   @db.Uuid
+  body       String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, targetType, targetId])
+}
+
+model SavedItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  targetType String   @db.VarChar(40)
+  targetId   String   @db.Uuid
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+}
+
+model StudySession {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  surface         String    @db.VarChar(40)
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  durationSeconds Int       @default(0)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startedAt])
+}
+
+model VocabularyEntry {
+  id            String              @id @default(uuid()) @db.Uuid
+  lemma         String              @unique @db.VarChar(255)
+  pronunciation String?
+  partOfSpeech  String?
+  meanings      Json
+  examples      Json?
+  audioAssetId  String?             @db.Uuid
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  sets          VocabularySetItem[]
+  cards         SrsCard[]
+}
+
+model VocabularySet {
+  id          String              @id @default(uuid()) @db.Uuid
+  slug        String              @unique @db.VarChar(255)
+  title       String              @db.VarChar(255)
+  description String?
+  status      ContentStatus       @default(DRAFT)
+  items       VocabularySetItem[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model VocabularySetItem {
+  setId     String          @db.Uuid
+  entryId   String          @db.Uuid
+  sortOrder Int
+  set       VocabularySet   @relation(fields: [setId], references: [id], onDelete: Cascade)
+  entry     VocabularyEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@id([setId, entryId])
+  @@index([setId, sortOrder])
+}
+
+model SrsCard {
+  id             String          @id @default(uuid()) @db.Uuid
+  userId         String          @db.Uuid
+  entryId        String          @db.Uuid
+  state          SrsState        @default(NEW)
+  dueAt          DateTime        @default(now())
+  intervalDays   Float           @default(0)
+  ease           Float           @default(2.5)
+  repetitions    Int             @default(0)
+  lapses         Int             @default(0)
+  lastReviewedAt DateTime?
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entry          VocabularyEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entryId])
+  @@index([userId, dueAt, state])
+}
+
+model MockTest {
+  id          String             @id @default(uuid()) @db.Uuid
+  slug        String             @unique @db.VarChar(255)
+  title       String             @db.VarChar(255)
+  durationMin Int
+  status      ContentStatus      @default(DRAFT)
+  questions   MockTestQuestion[]
+  sessions    ExamSession[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model MockTestQuestion {
+  testId     String   @db.Uuid
+  questionId String   @db.Uuid
+  sortOrder  Int
+  part       Int?
+  test       MockTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id])
+
+  @@id([testId, questionId])
+  @@unique([testId, sortOrder])
+  @@index([testId, part])
+}
+
+model ExamSession {
+  id          String            @id @default(uuid()) @db.Uuid
+  userId      String            @db.Uuid
+  testId      String            @db.Uuid
+  status      ExamSessionStatus @default(ACTIVE)
+  mode        String            @db.VarChar(32)
+  startedAt   DateTime          @default(now())
+  deadlineAt  DateTime
+  submittedAt DateTime?
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test        MockTest          @relation(fields: [testId], references: [id])
+  answers     ExamAnswer[]
+  result      ExamResult?
+
+  @@index([userId, status, startedAt])
+}
+
+model ExamAnswer {
+  sessionId      String      @db.Uuid
+  questionId     String      @db.Uuid
+  selectedAnswer String?
+  isCorrect      Boolean?
+  answeredAt     DateTime?
+  session        ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question       Question    @relation(fields: [questionId], references: [id])
+
+  @@id([sessionId, questionId])
+}
+
+model ExamResult {
+  sessionId   String      @id @db.Uuid
+  total       Int
+  correct     Int
+  wrong       Int
+  unanswered  Int
+  score       Int?
+  durationSec Int
+  createdAt   DateTime    @default(now())
+  session     ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model WritingSubmission {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @db.Uuid
+  promptId    String?       @db.Uuid
+  part        Int
+  body        String        @db.Text
+  wordCount   Int
+  status      WritingStatus @default(DRAFT)
+  submittedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grade       WritingGrade?
+
+  @@index([userId, status, createdAt])
+}
+
+model WritingGrade {
+  submissionId String            @id @db.Uuid
+  overall      Float?
+  rubric       Json?
+  feedback     Json?
+  provider     String?           @db.VarChar(80)
+  createdAt    DateTime          @default(now())
+  submission   WritingSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model AiCreditLedger {
+  id           String          @id @default(uuid()) @db.Uuid
+  userId       String          @db.Uuid
+  type         CreditEntryType
+  amount       Int
+  balanceAfter Int
+  referenceId  String?         @db.Uuid
+  metadata     Json?
+  createdAt    DateTime        @default(now())
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
