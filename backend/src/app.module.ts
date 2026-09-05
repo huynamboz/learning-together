@@ -9,6 +9,8 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { RolesGuard } from './access/roles.guard';
 import { RequestIdMiddleware } from './common/http/request-id.middleware';
+import { MediaModule } from './media/media.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -16,7 +18,9 @@ import { RequestIdMiddleware } from './common/http/request-id.middleware';
     LoggerModule.forRoot({ pinoHttp: { level: process.env.NODE_ENV === 'production' ? 'info' : 'debug' } }),
     DatabaseModule,
     HealthModule,
-    AuthModule
+    AuthModule,
+    MediaModule,
+    AdminModule
   ],
   providers: [{ provide: APP_GUARD, useClass: RolesGuard }]
 })

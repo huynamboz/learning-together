@@ -45,22 +45,78 @@ enum EntitlementStatus {
   REVOKED
 }
 
+enum StorageProvider {
+  S3
+  R2
+  LOCAL
+}
+
+enum MediaStatus {
+  PENDING
+  PROCESSING
+  READY
+  QUARANTINED
+  FAILED
+  DELETED
+}
+
+enum UploadStatus {
+  PENDING
+  COMPLETED
+  ABORTED
+  EXPIRED
+}
+
+enum ContentStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContentType {
+  LISTENING
+  READING
+  GRAMMAR
+  VOCABULARY
+  EXAM
+  VIDEO
+  WRITING
+  BLOG
+}
+
+enum ImportStatus {
+  PENDING
+  VALIDATING
+  READY_TO_IMPORT
+  IMPORTING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
 model User {
-  id              String         @id @default(uuid()) @db.Uuid
-  email           String         @unique @db.VarChar(320)
-  displayName     String         @db.VarChar(120)
-  avatarAssetId   String?        @db.Uuid
-  status          UserStatus     @default(ACTIVE)
-  timezone        String         @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
-  locale          String         @default("vi-VN") @db.VarChar(16)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id              String           @id @default(uuid()) @db.Uuid
+  email           String           @unique @db.VarChar(320)
+  displayName     String           @db.VarChar(120)
+  avatarAssetId   String?          @db.Uuid
+  status          UserStatus       @default(ACTIVE)
+  timezone        String           @default("Asia/Ho_Chi_Minh") @db.VarChar(64)
+  locale          String           @default("vi-VN") @db.VarChar(16)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   identities      AuthIdentity[]
   sessions        Session[]
   devices         Device[]
   roles           UserRole[]
   entitlements    Entitlement[]
   auditLogs       AuditLog[]
+  ownedMedia      MediaAsset[]     @relation("MediaOwner")
+  uploadSessions  UploadSession[]  @relation("UploadCreator")
+  createdContent  ContentItem[]    @relation("ContentCreator")
+  updatedContent  ContentItem[]    @relation("ContentUpdater")
+  contentVersions ContentVersion[]
+  importBatches   ImportBatch[]
 
   @@index([status, createdAt])
 }
@@ -103,7 +159,7 @@ model Device {
   firstSeenAt DateTime   @default(now())
   lastSeenAt  DateTime   @default(now())
   revokedAt   DateTime?
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, deviceHash])
   @@index([userId, revokedAt])
@@ -125,37 +181,140 @@ model UserRole {
 }
 
 model Plan {
-  id           String         @id @default(uuid()) @db.Uuid
-  code         PlanCode       @unique
-  displayName  String         @db.VarChar(80)
+  id           String        @id @default(uuid()) @db.Uuid
+  code         PlanCode      @unique
+  displayName  String        @db.VarChar(80)
   entitlements Entitlement[]
 }
 
 model Entitlement {
-  id          String             @id @default(uuid()) @db.Uuid
-  userId      String             @db.Uuid
-  planId      String             @db.Uuid
-  status      EntitlementStatus  @default(ACTIVE)
-  startsAt    DateTime           @default(now())
+  id          String            @id @default(uuid()) @db.Uuid
+  userId      String            @db.Uuid
+  planId      String            @db.Uuid
+  status      EntitlementStatus @default(ACTIVE)
+  startsAt    DateTime          @default(now())
   expiresAt   DateTime?
-  sourceOrder String?            @db.Uuid
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan        Plan               @relation(fields: [planId], references: [id])
+  sourceOrder String?           @db.Uuid
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        Plan              @relation(fields: [planId], references: [id])
 
   @@index([userId, status, startsAt, expiresAt])
 }
 
 model AuditLog {
-  id         String   @id @default(uuid()) @db.Uuid
-  actorId    String?  @db.Uuid
-  action     String   @db.VarChar(120)
-  entity     String   @db.VarChar(120)
-  entityId   String?  @db.VarChar(120)
-  requestId  String?  @db.VarChar(80)
-  metadata   Json?
-  createdAt  DateTime @default(now())
-  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @db.Uuid
+  action    String   @db.VarChar(120)
+  entity    String   @db.VarChar(120)
+  entityId  String?  @db.VarChar(120)
+  requestId String?  @db.VarChar(80)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([entity, entityId, createdAt])
   @@index([actorId, createdAt])
+}
+
+model MediaAsset {
+  id            String          @id @default(uuid()) @db.Uuid
+  ownerId       String?         @db.Uuid
+  provider      StorageProvider
+  bucket        String          @db.VarChar(255)
+  objectKey     String          @unique @db.VarChar(1024)
+  originalName  String          @db.VarChar(255)
+  mimeType      String          @db.VarChar(120)
+  byteSize      BigInt
+  checksum      String?         @db.VarChar(128)
+  status        MediaStatus     @default(PENDING)
+  visibility    String          @default("private") @db.VarChar(32)
+  metadata      Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  owner         User?           @relation("MediaOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  uploadSession UploadSession?
+
+  @@index([ownerId, status, createdAt])
+}
+
+model UploadSession {
+  id           String          @id @default(uuid()) @db.Uuid
+  assetId      String          @unique @db.Uuid
+  createdById  String?         @db.Uuid
+  provider     StorageProvider
+  status       UploadStatus    @default(PENDING)
+  objectKey    String          @db.VarChar(1024)
+  uploadId     String?         @db.VarChar(255)
+  expectedSize BigInt
+  expectedHash String?         @db.VarChar(128)
+  instructions Json?
+  expiresAt    DateTime
+  completedAt  DateTime?
+  createdAt    DateTime        @default(now())
+  asset        MediaAsset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  createdBy    User?           @relation("UploadCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([createdById, status, expiresAt])
+}
+
+model ContentItem {
+  id             String           @id @default(uuid()) @db.Uuid
+  type           ContentType
+  slug           String           @unique @db.VarChar(255)
+  title          String           @db.VarChar(255)
+  part           Int?
+  level          Int?
+  status         ContentStatus    @default(DRAFT)
+  createdById    String           @db.Uuid
+  updatedById    String?          @db.Uuid
+  currentVersion Int              @default(1)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  createdBy      User             @relation("ContentCreator", fields: [createdById], references: [id])
+  updatedBy      User?            @relation("ContentUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  versions       ContentVersion[]
+
+  @@index([type, status, part, level])
+}
+
+model ContentVersion {
+  id            String      @id @default(uuid()) @db.Uuid
+  contentItemId String      @db.Uuid
+  version       Int
+  payload       Json
+  createdById   String      @db.Uuid
+  createdAt     DateTime    @default(now())
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  createdBy     User        @relation(fields: [createdById], references: [id])
+
+  @@unique([contentItemId, version])
+}
+
+model ImportBatch {
+  id          String       @id @default(uuid()) @db.Uuid
+  createdById String       @db.Uuid
+  sourceName  String       @db.VarChar(255)
+  schema      String       @db.VarChar(80)
+  status      ImportStatus @default(PENDING)
+  summary     Json?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  items       ImportItem[]
+
+  @@index([status, createdAt])
+}
+
+model ImportItem {
+  id          String      @id @default(uuid()) @db.Uuid
+  batchId     String      @db.Uuid
+  rowNumber   Int
+  externalKey String      @db.VarChar(255)
+  status      String      @db.VarChar(32)
+  payload     Json
+  error       String?
+  batch       ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, rowNumber])
+  @@index([batchId, status])
 }
