@@ -21,8 +21,12 @@ button, a, input, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 
+input:not([type='checkbox']):not([type='radio']), textarea, select {
+  background-color: #f5f6f7 !important;
+}
+
 .focus-ring:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
-  outline: 3px solid rgba(93, 95, 239, .42);
+  outline: 3px solid rgba(28, 176, 246, .34);
   outline-offset: 3px;
 }
 
