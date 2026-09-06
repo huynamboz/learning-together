@@ -266,7 +266,7 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 
 <style scoped>
 .hub-page {
-  --hub-cream: #fffdf7;
+  --hub-cream: #fff8e7;
   --hub-mint: #eaf8ef;
   --hub-green: #58cc02;
   --hub-blue: #1cb0f6;
