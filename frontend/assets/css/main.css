@@ -26,6 +26,11 @@ input:not([type='checkbox']):not([type='radio']), textarea, select {
   background-color: #f5f6f7 !important;
 }
 
+.page-enter :is(input:not([type='checkbox']):not([type='radio']):not([type='file']), textarea) {
+  border-radius: 1rem;
+  padding: .75rem 1rem;
+}
+
 .focus-ring:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
   outline: 3px solid rgba(28, 176, 246, .34);
   outline-offset: 3px;
