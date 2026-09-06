@@ -47,11 +47,11 @@ const router = useRouter();
 const { request, accessToken, refreshToken } = useAppApi();
 
 const tabs: Array<{ key: TabKey; label: string; icon: string; detail: string }> = [
-  { key: 'profile', label: 'Thông tin cá nhân', icon: '◉', detail: 'Tên, email và gói học' },
-  { key: 'password', label: 'Đổi mật khẩu', icon: '⌁', detail: 'Giữ tài khoản an toàn' },
-  { key: 'devices', label: 'Thiết bị', icon: '▣', detail: 'Các phiên đang hoạt động' },
-  { key: 'notifications', label: 'Thông báo', icon: '♧', detail: 'Nhắc ôn và streak' },
-  { key: 'referral', label: 'Chia sẻ & giới thiệu', icon: '↗', detail: 'Theo dõi lời mời' }
+  { key: 'profile', label: 'Thông tin cá nhân', icon: 'solar:user-circle-bold-duotone', detail: 'Tên, email và gói học' },
+  { key: 'password', label: 'Đổi mật khẩu', icon: 'solar:lock-keyhole-minimalistic-bold', detail: 'Giữ tài khoản an toàn' },
+  { key: 'devices', label: 'Thiết bị', icon: 'tabler:devices', detail: 'Các phiên đang hoạt động' },
+  { key: 'notifications', label: 'Thông báo', icon: 'solar:bell-bing-bold', detail: 'Nhắc ôn và streak' },
+  { key: 'referral', label: 'Chia sẻ & giới thiệu', icon: 'solar:share-bold', detail: 'Theo dõi lời mời' }
 ];
 
 const validTabs = new Set<TabKey>(tabs.map((tab) => tab.key));
@@ -217,11 +217,11 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
     <div class="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
       <nav class="hub-nav overflow-hidden rounded-[22px] border border-line bg-white p-2 shadow-soft" aria-label="Quản lý tài khoản">
         <button v-for="tab in tabs" :key="tab.key" class="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-paper focus-ring" :class="activeTab === tab.key ? 'bg-[#E7F7F1] text-ink' : 'text-ink/65'" @click="goToTab(tab.key)">
-          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-sm" :class="activeTab === tab.key ? 'bg-leaf text-ink' : 'bg-paper text-ink/55'">{{ tab.icon }}</span>
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl" :class="activeTab === tab.key ? 'bg-leaf text-ink' : 'bg-paper text-ink/55'"><AppIcon :icon="tab.icon" :size="21" /></span>
           <span class="min-w-0"><span class="block text-xs font-extrabold">{{ tab.label }}</span><span class="mt-0.5 block text-[11px] leading-4 text-ink/45">{{ tab.detail }}</span></span>
         </button>
         <div class="my-2 border-t border-line" />
-        <NuxtLink to="/" class="flex items-center gap-2 rounded-2xl px-3 py-3 text-xs font-bold text-ink/55 hover:bg-paper focus-ring">← Về dashboard học</NuxtLink>
+        <NuxtLink to="/" class="flex items-center gap-2 rounded-2xl px-3 py-3 text-xs font-bold text-ink/55 hover:bg-paper focus-ring"><AppIcon icon="solar:arrow-left-linear" :size="18" /> Về dashboard học</NuxtLink>
       </nav>
 
       <section class="hub-panel min-w-0 rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-7">

@@ -2,14 +2,14 @@
 defineEmits<{ toggleChat: [] }>();
 const notificationOpen = ref(false);
 const navItems = [
-  { label: 'Nghe', icon: '◌', to: '/listen' },
-  { label: 'Đọc', icon: '▦', to: '/read' },
-  { label: 'Viết', icon: '✎', to: '/write' },
-  { label: 'Từ vựng', icon: '▤', to: '/vocabulary' },
-  { label: 'Đề thi', icon: '▥', to: '/mock-test' },
-  { label: 'Video', icon: '▷', to: '/video' },
-  { label: 'Cộng đồng', icon: '⌁', to: '/hoi-dap' },
-  { label: 'Leaderboard', icon: '♕', to: '/leaderboard' }
+  { label: 'Nghe', icon: 'solar:headphones-round-sound-bold', to: '/listen' },
+  { label: 'Đọc', icon: 'solar:book-2-bold', to: '/read' },
+  { label: 'Viết', icon: 'solar:pen-new-square-bold', to: '/write' },
+  { label: 'Từ vựng', icon: 'solar:book-bookmark-bold', to: '/vocabulary' },
+  { label: 'Đề thi', icon: 'solar:clipboard-list-bold', to: '/mock-test' },
+  { label: 'Video', icon: 'solar:play-circle-bold', to: '/video' },
+  { label: 'Cộng đồng', icon: 'tabler:messages', to: '/hoi-dap' },
+  { label: 'Leaderboard', icon: 'solar:cup-star-bold', to: '/leaderboard' }
 ];
 </script>
 
@@ -22,7 +22,7 @@ const navItems = [
       </NuxtLink>
       <nav class="hidden min-w-0 flex-1 items-center gap-0.5 xl:flex" aria-label="Khu vực học">
         <NuxtLink v-for="item in navItems" :key="item.to" :to="item.to" class="group flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[12px] font-semibold text-ink/65 transition hover:bg-white hover:text-ink focus-ring">
-          <span class="text-[15px] text-iris/80 transition group-hover:scale-110">{{ item.icon }}</span>{{ item.label }}
+          <span class="text-iris/80 transition group-hover:scale-110"><AppIcon :icon="item.icon" :size="17" /></span>{{ item.label }}
         </NuxtLink>
       </nav>
       <div class="ml-auto flex items-center gap-1.5">
@@ -30,7 +30,7 @@ const navItems = [
         <span class="hidden rounded-xl bg-white px-2.5 py-2 text-xs font-bold text-ink/70 sm:block">◷ 13m</span>
         <span class="hidden rounded-xl bg-[#FFF6DF] px-2.5 py-2 text-xs font-bold text-[#9A6A00] sm:block">♨ 1</span>
         <div class="relative">
-          <button class="grid h-10 w-10 place-items-center rounded-xl text-lg text-ink/65 transition hover:bg-white focus-ring" aria-label="Thông báo" :aria-expanded="notificationOpen" @click="notificationOpen = !notificationOpen">♧<span class="sr-only">Thông báo</span></button>
+          <button class="grid h-10 w-10 place-items-center rounded-xl text-ink/65 transition hover:bg-white focus-ring" aria-label="Thông báo" :aria-expanded="notificationOpen" @click="notificationOpen = !notificationOpen"><AppIcon icon="solar:bell-bing-bold" :size="20" /><span class="sr-only">Thông báo</span></button>
           <div v-if="notificationOpen" class="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-line bg-white p-4 shadow-float" role="status">
             <p class="text-xs font-bold text-ink/45">THÔNG BÁO</p>
             <p class="mt-2 text-sm font-bold">Bạn đã cập nhật đến đây.</p>
@@ -42,7 +42,7 @@ const navItems = [
       </div>
     </div>
     <div class="flex gap-1 overflow-x-auto border-t border-line/50 px-4 py-2 xl:hidden">
-      <NuxtLink v-for="item in navItems" :key="item.to" :to="item.to" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-ink/65 hover:bg-white focus-ring">{{ item.icon }} {{ item.label }}</NuxtLink>
+      <NuxtLink v-for="item in navItems" :key="item.to" :to="item.to" class="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-ink/65 hover:bg-white focus-ring"><AppIcon :icon="item.icon" :size="16" /> {{ item.label }}</NuxtLink>
     </div>
   </header>
 </template>
