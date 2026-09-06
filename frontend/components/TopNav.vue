@@ -14,7 +14,7 @@ const navItems = [
 </script>
 
 <template>
-  <header class="sticky top-0 z-30 border-b border-line/80 bg-paper/90 backdrop-blur-xl">
+  <header class="sticky top-0 z-30 border-b border-line bg-white">
     <div class="mx-auto flex h-[68px] max-w-[1320px] items-center gap-3 px-4 sm:px-6 lg:px-8">
       <NuxtLink to="/" class="mr-2 flex shrink-0 items-center gap-2.5 rounded-xl px-1 py-1 text-ink focus-ring">
         <span class="grid h-9 w-9 place-items-center rounded-xl bg-ink text-lg text-white shadow-soft">Đ</span>
