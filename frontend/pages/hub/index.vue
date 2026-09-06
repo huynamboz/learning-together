@@ -216,23 +216,23 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 
     <div class="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
       <nav class="hub-nav overflow-hidden rounded-[22px] border border-line bg-white p-2 shadow-soft" aria-label="Quản lý tài khoản">
-        <button v-for="tab in tabs" :key="tab.key" class="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-paper focus-ring" :class="activeTab === tab.key ? 'bg-[#E7F7F1] text-ink' : 'text-ink/65'" @click="goToTab(tab.key)">
-          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl" :class="activeTab === tab.key ? 'bg-leaf text-ink' : 'bg-paper text-ink/55'"><AppIcon :icon="tab.icon" :size="21" /></span>
+        <button v-for="tab in tabs" :key="tab.key" class="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-mint focus-ring" :class="activeTab === tab.key ? 'is-active bg-mint text-ink' : 'text-ink/65'" @click="goToTab(tab.key)">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl" :class="activeTab === tab.key ? 'bg-leaf text-ink' : 'bg-mint text-ink/55'"><AppIcon :icon="tab.icon" :size="21" /></span>
           <span class="min-w-0"><span class="block text-xs font-extrabold">{{ tab.label }}</span><span class="mt-0.5 block text-[11px] leading-4 text-ink/45">{{ tab.detail }}</span></span>
         </button>
         <div class="my-2 border-t border-line" />
-        <NuxtLink to="/" class="flex items-center gap-2 rounded-2xl px-3 py-3 text-xs font-bold text-ink/55 hover:bg-paper focus-ring"><AppIcon icon="solar:arrow-left-linear" :size="18" /> Về dashboard học</NuxtLink>
+        <NuxtLink to="/" class="flex items-center gap-2 rounded-2xl px-3 py-3 text-xs font-bold text-ink/55 hover:bg-mint focus-ring"><AppIcon icon="solar:arrow-left-linear" :size="18" /> Về dashboard học</NuxtLink>
       </nav>
 
       <section class="hub-panel min-w-0 rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-7">
-        <div v-if="loading" class="rounded-2xl bg-paper p-6 text-sm text-ink/55">Đang mở không gian tài khoản…</div>
+        <div v-if="loading" class="rounded-2xl bg-mint p-6 text-sm text-ink/55">Đang mở không gian tài khoản…</div>
 
         <template v-else-if="activeTab === 'profile'">
           <div class="border-b border-line pb-5"><p class="text-xs font-bold text-leaf">HỒ SƠ</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Thông tin cá nhân</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Tên hiển thị của bạn xuất hiện trong cộng đồng, bảng xếp hạng và lịch sử học.</p></div>
           <form class="mt-6 max-w-xl space-y-5" @submit.prevent="updateProfile">
             <AppInput id="hub-display-name" v-model="displayName" label="Tên hiển thị" maxlength="120" autocomplete="name" />
-            <div><p class="text-xs font-extrabold text-ink/55">Email</p><p class="mt-2 rounded-xl bg-paper px-4 py-3 text-sm text-ink/60">{{ user?.email }} <span class="ml-2 text-xs text-ink/35">Chỉ đọc</span></p></div>
-            <div class="grid gap-3 sm:grid-cols-2"><div class="rounded-2xl bg-[#E7F7F1] p-4"><p class="text-[11px] font-bold text-leaf">THÀNH VIÊN TỪ</p><p class="mt-2 text-sm font-extrabold">{{ memberSince }}</p></div><div class="rounded-2xl bg-[#FFF6DF] p-4"><p class="text-[11px] font-bold text-[#A87400]">ĐIỂM GẦN NHẤT</p><p class="mt-2 text-sm font-extrabold">{{ dashboard?.metrics.lastExam?.score ?? 'Chưa có' }}</p></div></div>
+            <div><p class="text-xs font-extrabold text-ink/55">Email</p><p class="mt-2 rounded-xl bg-mint px-4 py-3 text-sm text-ink/60">{{ user?.email }} <span class="ml-2 text-xs text-ink/35">Chỉ đọc</span></p></div>
+            <div class="grid gap-3 sm:grid-cols-2"><div class="rounded-2xl bg-mint p-4"><p class="text-[11px] font-bold text-leaf">THÀNH VIÊN TỪ</p><p class="mt-2 text-sm font-extrabold">{{ memberSince }}</p></div><div class="rounded-2xl bg-sun p-4"><p class="text-[11px] font-bold text-[#A87400]">ĐIỂM GẦN NHẤT</p><p class="mt-2 text-sm font-extrabold">{{ dashboard?.metrics.lastExam?.score ?? 'Chưa có' }}</p></div></div>
             <AppButton type="submit" :loading="busy">{{ busy ? 'Đang lưu…' : 'Lưu thay đổi' }}</AppButton>
           </form>
         </template>
@@ -244,19 +244,19 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 
         <template v-else-if="activeTab === 'devices'">
           <div class="border-b border-line pb-5"><p class="text-xs font-bold text-leaf">TRUY CẬP</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Thiết bị đã đăng nhập</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Bạn có thể gỡ một thiết bị không còn sử dụng. Giới hạn tham chiếu: tối đa 3 thiết bị.</p></div>
-          <div v-if="devices.length" class="mt-6 divide-y divide-line"> <div v-for="device in devices" :key="device.id" class="flex flex-wrap items-center justify-between gap-4 py-4 first:pt-0"><div class="flex items-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-2xl bg-paper text-lg text-iris">▣</span><div><p class="text-sm font-extrabold">{{ deviceLabel(device) }}</p><p class="mt-1 text-xs text-ink/45">{{ device.type }} · hoạt động {{ formatDate(device.lastSeenAt) }}</p></div></div><AppButton variant="secondary" size="sm" :disabled="busy" @click="removeDevice(device)">Gỡ thiết bị</AppButton></div></div>
-          <div v-else class="mt-6 rounded-2xl bg-paper p-5 text-sm text-ink/55">Chưa có thiết bị nào được ghi nhận trong phiên này.</div>
+          <div v-if="devices.length" class="mt-6 divide-y divide-line"> <div v-for="device in devices" :key="device.id" class="flex flex-wrap items-center justify-between gap-4 py-4 first:pt-0"><div class="flex items-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-2xl bg-mint text-lg text-iris">▣</span><div><p class="text-sm font-extrabold">{{ deviceLabel(device) }}</p><p class="mt-1 text-xs text-ink/45">{{ device.type }} · hoạt động {{ formatDate(device.lastSeenAt) }}</p></div></div><AppButton variant="secondary" size="sm" :disabled="busy" @click="removeDevice(device)">Gỡ thiết bị</AppButton></div></div>
+          <div v-else class="mt-6 rounded-2xl bg-mint p-5 text-sm text-ink/55">Chưa có thiết bị nào được ghi nhận trong phiên này.</div>
         </template>
 
         <template v-else-if="activeTab === 'notifications'">
           <div class="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-5"><div><p class="text-xs font-bold text-leaf">NHẮC NHỞ</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Thông báo</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Chọn nhịp nhắc giúp bạn quay lại học mà không bị làm phiền.</p></div><AppButton variant="secondary" size="sm" :disabled="!unreadCount || busy" @click="markNotificationsRead">Đã đọc tất cả</AppButton></div>
-          <div class="mt-6 grid gap-3 sm:grid-cols-2"><label v-for="item in [{ key: 'vocabulary', label: 'Ôn từ vựng', detail: 'Nhắc khi thẻ SRS đến hạn' }, { key: 'streak', label: 'Giữ streak', detail: 'Nhắc khi hôm nay chưa học' }, { key: 'goals', label: 'Mục tiêu ngày', detail: 'Tóm tắt tiến độ trong ngày' }, { key: 'community', label: 'Cộng đồng', detail: 'Phản hồi và hoạt động liên quan' }]" :key="item.key" class="flex cursor-pointer items-start gap-3 rounded-2xl bg-paper p-4"><input v-model="notificationPrefs[item.key as keyof typeof notificationPrefs]" type="checkbox" class="mt-1 h-4 w-4 accent-iris"><span><span class="block text-sm font-extrabold">{{ item.label }}</span><span class="mt-1 block text-xs leading-5 text-ink/50">{{ item.detail }}</span></span></label></div>
-          <div class="mt-8"><div class="flex items-center justify-between gap-3"><h3 class="text-sm font-extrabold">Gần đây</h3><span class="text-xs text-ink/40">{{ unreadCount }} chưa đọc</span></div><div v-if="notifications.length" class="mt-3 divide-y divide-line"> <div v-for="item in notifications" :key="item.id" class="py-3"><p class="text-sm font-extrabold" :class="item.readAt ? 'text-ink/60' : 'text-ink'">{{ item.title }}</p><p class="mt-1 text-xs leading-5 text-ink/50">{{ item.body }}</p><p class="mt-1 text-[11px] text-ink/35">{{ formatDate(item.createdAt) }}</p></div></div><p v-else class="mt-3 rounded-2xl bg-paper p-5 text-xs leading-5 text-ink/55">Chưa có thông báo mới. Khi có hoạt động đáng chú ý, chúng sẽ xuất hiện ở đây.</p></div>
+          <div class="mt-6 grid gap-3 sm:grid-cols-2"><label v-for="item in [{ key: 'vocabulary', label: 'Ôn từ vựng', detail: 'Nhắc khi thẻ SRS đến hạn' }, { key: 'streak', label: 'Giữ streak', detail: 'Nhắc khi hôm nay chưa học' }, { key: 'goals', label: 'Mục tiêu ngày', detail: 'Tóm tắt tiến độ trong ngày' }, { key: 'community', label: 'Cộng đồng', detail: 'Phản hồi và hoạt động liên quan' }]" :key="item.key" class="flex cursor-pointer items-start gap-3 rounded-2xl bg-mint p-4"><input v-model="notificationPrefs[item.key as keyof typeof notificationPrefs]" type="checkbox" class="mt-1 h-4 w-4 accent-iris"><span><span class="block text-sm font-extrabold">{{ item.label }}</span><span class="mt-1 block text-xs leading-5 text-ink/50">{{ item.detail }}</span></span></label></div>
+          <div class="mt-8"><div class="flex items-center justify-between gap-3"><h3 class="text-sm font-extrabold">Gần đây</h3><span class="text-xs text-ink/40">{{ unreadCount }} chưa đọc</span></div><div v-if="notifications.length" class="mt-3 divide-y divide-line"> <div v-for="item in notifications" :key="item.id" class="py-3"><p class="text-sm font-extrabold" :class="item.readAt ? 'text-ink/60' : 'text-ink'">{{ item.title }}</p><p class="mt-1 text-xs leading-5 text-ink/50">{{ item.body }}</p><p class="mt-1 text-[11px] text-ink/35">{{ formatDate(item.createdAt) }}</p></div></div><p v-else class="mt-3 rounded-2xl bg-mint p-5 text-xs leading-5 text-ink/55">Chưa có thông báo mới. Khi có hoạt động đáng chú ý, chúng sẽ xuất hiện ở đây.</p></div>
         </template>
 
         <template v-else>
           <div class="border-b border-line pb-5"><p class="text-xs font-bold text-leaf">CHIA SẺ</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Giới thiệu bạn bè</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Khu vực theo dõi lượt giới thiệu và hoa hồng của bạn.</p></div>
-          <div class="mt-6 rounded-[22px] bg-[#E7F7F1] p-5 sm:p-6"><p class="text-xs font-bold text-leaf">REFERRAL HUB</p><h3 class="mt-2 text-xl font-extrabold">Chia sẻ hành trình học của bạn</h3><p class="mt-2 max-w-lg text-sm leading-6 text-ink/60">Mã giới thiệu, attribution và lịch sử hoa hồng sẽ được nối với billing khi hệ thống thanh toán production được bật.</p><NuxtLink to="/upgrade" class="mt-5 inline-flex rounded-xl bg-ink px-4 py-3 text-xs font-extrabold text-white hover:bg-iris focus-ring">Xem các gói học</NuxtLink></div>
+          <div class="mt-6 rounded-[22px] bg-mint p-5 sm:p-6"><p class="text-xs font-bold text-leaf">REFERRAL HUB</p><h3 class="mt-2 text-xl font-extrabold">Chia sẻ hành trình học của bạn</h3><p class="mt-2 max-w-lg text-sm leading-6 text-ink/60">Mã giới thiệu, attribution và lịch sử hoa hồng sẽ được nối với billing khi hệ thống thanh toán production được bật.</p><NuxtLink to="/upgrade" class="cta-sky mt-5 inline-flex px-4 py-3 text-xs font-extrabold focus-ring">Xem các gói học</NuxtLink></div>
           <div class="mt-5 grid gap-3 sm:grid-cols-3"><div v-for="item in [{ label: 'Lượt truy cập', value: '—' }, { label: 'Bạn đã mời', value: '—' }, { label: 'Hoa hồng', value: '—' }]" :key="item.label" class="rounded-2xl border border-line p-4"><p class="text-xs text-ink/45">{{ item.label }}</p><p class="mt-2 text-2xl font-extrabold">{{ item.value }}</p><p class="mt-1 text-[11px] text-ink/40">Chưa có dữ liệu</p></div></div>
         </template>
       </section>
@@ -265,71 +265,12 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 </template>
 
 <style scoped>
-.hub-page {
-  --hub-cream: #ffffff;
-  --hub-mint: #eaf8ef;
-  --hub-green: #58cc02;
-  --hub-blue: #1cb0f6;
-  --hub-yellow: #ffc800;
-  --hub-ink: #263238;
-  width: 100vw;
-  margin: -1.5rem calc(50% - 50vw) -4rem;
-  min-height: calc(100vh - 68px);
-  padding: 1.5rem max(1rem, calc((100vw - 1320px) / 2 + 1rem)) 4rem;
-  background: var(--hub-cream);
-  color: var(--hub-ink);
-}
-
-.hub-page :is(.shadow-soft, .shadow-float) { box-shadow: none !important; }
-.hub-page :is(.border-line) { border-color: #dcecdf !important; }
-.hub-page :is(.bg-white) { background-color: transparent !important; }
-.hub-page :is(.bg-paper):not(input):not(textarea) { background-color: var(--hub-mint) !important; }
-.hub-page :is(input, textarea) { border-color: #bfe3c7 !important; background: #f5f6f7 !important; }
-.hub-page :is(input, textarea):focus,
-.hub-page :is(input, textarea):focus-visible {
-  border-width: 1px !important;
-  border-color: #8bd85e !important;
-  outline: 2px solid rgba(88, 204, 2, .22) !important;
-  outline-offset: 1px !important;
-  box-shadow: none !important;
-}
-.hub-page :is(.text-ink\/45, .text-ink\/50, .text-ink\/55, .text-ink\/60, .text-ink\/65) { color: rgba(38, 50, 56, .68) !important; }
-
-.hub-hero {
-  border-bottom: 5px solid var(--hub-green);
-  border-radius: 22px !important;
-  background: #e9f8e6 !important;
-  color: var(--hub-ink) !important;
-}
-
-.hub-hero .text-white { color: var(--hub-ink) !important; }
-.hub-hero :is(.text-white\/45, .text-white\/60) { color: rgba(38, 50, 56, .62) !important; }
-.hub-hero .text-leaf { color: #46a900 !important; }
-.hub-hero .border-white\/10 { border-color: rgba(38, 50, 56, .1) !important; }
-
-.hub-page > .hub-hero {
-  min-height: auto;
-  padding: .25rem 0 1.1rem !important;
-  border-bottom: 1px solid #dcecdf !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-}
-.hub-page > .hub-hero > .absolute { display: none !important; }
+/* Layout that is specific to the account hub. Palette, surfaces, controls and the
+   flattened page intro now come from the shared theme in assets/css/main.css. */
 .hub-page > .hub-hero h1 { font-size: clamp(1.8rem, 4vw, 2.5rem) !important; }
-.hub-page > .hub-hero::after { display: none; }
 
-.hub-hero::after {
-  position: absolute;
-  right: 2.5rem;
-  bottom: 0;
-  left: 2.5rem;
-  height: 5px;
-  border-radius: 999px 999px 0 0;
-  background: linear-gradient(90deg, var(--hub-green) 0 42%, var(--hub-yellow) 42% 58%, rgba(255,255,255,.16) 58%);
-  content: '';
-}
-
-.hub-nav {
+.hub-nav,
+.hub-panel {
   border: 0 !important;
   background: transparent !important;
   padding: 0 !important;
@@ -341,43 +282,16 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 }
 
 .hub-nav button:hover { background: #f1faee !important; }
-.hub-nav button[class*="bg-[#E7F7F1]"] { background: var(--hub-mint) !important; }
-.hub-nav button[class*="bg-[#E7F7F1]"] span:first-child { background: var(--hub-green) !important; }
-
-.hub-panel {
-  border: 0 !important;
-  background: transparent !important;
-  padding: 0 !important;
-}
+.hub-nav button.is-active > span:first-child { background: var(--grass) !important; }
+.hub-nav button.is-active > span:last-child > span:first-child { background: var(--grass); }
 
 .hub-panel > :is(template, div) { max-width: 55rem; }
-.hub-panel :is(.bg-\[\#E7F7F1\]) { background: var(--hub-mint) !important; }
-.hub-panel :is(.bg-\[\#FFF6DF\]) { background: #fff7d6 !important; }
-.hub-panel button[class*="bg-ink"], .hub-panel a[class*="bg-ink"] {
-  border-radius: 16px;
-  corner-shape: squircle;
-}
-.hub-panel button[class*="bg-ink"] { background: var(--hub-green) !important; color: #fff !important; box-shadow: 0 3px 0 #46a900; }
-.hub-panel button[class*="bg-ink"]:hover { background: #78db28 !important; }
-.hub-panel a[class*="bg-ink"] { background: var(--hub-blue) !important; color: white !important; box-shadow: 0 3px 0 #1288c8; }
-.hub-panel a[class*="bg-ink"]:hover { background: #42baf2 !important; }
-
-@media (min-width: 640px) {
-  .hub-page { padding-inline: max(1.5rem, calc((100vw - 1320px) / 2 + 1.5rem)); }
-}
-
-@media (min-width: 1024px) {
-  .hub-page { padding-inline: max(2rem, calc((100vw - 1320px) / 2 + 2rem)); }
-}
 
 @media (max-width: 639px) {
-  .hub-hero { border-radius: 18px !important; padding: 1.25rem !important; }
-  .hub-hero .grid { text-align: left; }
-  .hub-hero::after { right: 1.25rem; left: 1.25rem; }
   .hub-nav { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem !important; scrollbar-width: none; }
   .hub-nav::-webkit-scrollbar { display: none; }
   .hub-nav button { min-width: 10.5rem; border-left: 0; border-bottom: 4px solid transparent; }
-  .hub-nav button[class*="bg-[#E7F7F1]"] { border-bottom-color: var(--hub-green); }
+  .hub-nav button.is-active { border-bottom-color: var(--grass); }
   .hub-nav button > span:last-child span:last-child { white-space: nowrap; }
 }
 </style>

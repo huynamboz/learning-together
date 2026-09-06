@@ -144,7 +144,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
       :aria-label="accessibleLabel"
       :disabled="disabled"
       v-bind="selectAttrs"
-      class="app-select-trigger group flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-[#F5F6F7] px-4 py-3 text-left text-sm font-bold text-ink outline-none transition duration-200 hover:border-iris/40 focus:border-iris focus:ring-4 focus:ring-iris/10 disabled:cursor-not-allowed disabled:opacity-60"
+      class="app-select-trigger group flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-field px-4 py-3 text-left text-sm font-bold text-ink outline-none transition duration-200 hover:border-iris/40 focus:border-iris focus:ring-4 focus:ring-iris/10 disabled:cursor-not-allowed disabled:opacity-60"
       @click="open ? closeMenu() : openMenu()"
       @keydown="onKeydown"
     >
@@ -164,7 +164,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', handleOutsideCli
           :class="[
             'flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition',
             option.disabled ? 'cursor-not-allowed text-ink/30' : 'cursor-pointer',
-            highlightedIndex === index && !option.disabled ? 'bg-[#EAF8EF] text-ink' : 'text-ink/75 hover:bg-[#F3FBF5] hover:text-ink',
+            highlightedIndex === index && !option.disabled ? 'bg-mint text-ink' : 'text-ink/75 hover:bg-mint/60 hover:text-ink',
             Object.is(option.value, modelValue) ? 'text-[#46A900]' : ''
           ]"
           @mouseenter="highlightedIndex = index"

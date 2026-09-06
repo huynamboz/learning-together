@@ -1,13 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --ink: #17213f;
+  --ink: #263238;
   --iris: #1cb0f6;
+  --iris-shade: #1288c8;
+  --iris-lift: #42baf2;
+  --grass: #58cc02;
+  --grass-shade: #46a900;
+  --grass-lift: #78db28;
   --bean: #f4b942;
   --leaf: #62c7a5;
   --paper: #ffffff;
   --chalk: #ffffff;
-  --line: #e3e7f0;
+  --mint: #eaf8ef;
+  --sun: #fff7d6;
+  --line: #dcecdf;
+  --field: #f5f6f7;
+  --field-line: #bfe3c7;
+  --field-line-focus: #8bd85e;
   --surface-muted: #f5f6f7;
   font-family: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
   color: var(--ink);
@@ -23,7 +33,8 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 
 input:not([type='checkbox']):not([type='radio']), textarea, select {
-  background-color: #f5f6f7 !important;
+  background-color: var(--field) !important;
+  border-color: var(--field-line) !important;
 }
 
 .page-enter :is(input:not([type='checkbox']):not([type='radio']):not([type='file']), textarea) {
@@ -31,15 +42,26 @@ input:not([type='checkbox']):not([type='radio']), textarea, select {
   padding: .75rem 1rem;
 }
 
-.focus-ring:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+.focus-ring:focus-visible, button:focus-visible, a:focus-visible {
   outline: 3px solid rgba(28, 176, 246, .34);
   outline-offset: 3px;
+}
+
+input:not([type='checkbox']):not([type='radio']):focus,
+input:not([type='checkbox']):not([type='radio']):focus-visible,
+textarea:focus, textarea:focus-visible,
+select:focus, select:focus-visible {
+  border-width: 1px !important;
+  border-color: var(--field-line-focus) !important;
+  outline: 2px solid rgba(88, 204, 2, .22) !important;
+  outline-offset: 1px !important;
+  box-shadow: none !important;
 }
 
 .page-enter { animation: page-enter .55s cubic-bezier(.22, 1, .36, 1) both; }
 
 /* Shared learning-workspace rhythm: compact page intro, quieter surfaces, direct access to the task. */
-.page-enter > section:first-child {
+.page-enter > section:first-child:not(.keeps-surface) {
   min-height: auto !important;
   border: 0 !important;
   border-bottom: 1px solid var(--line) !important;
@@ -49,13 +71,30 @@ input:not([type='checkbox']):not([type='radio']), textarea, select {
   color: var(--ink) !important;
   padding: .25rem 0 1.35rem !important;
 }
-.page-enter > section:first-child > .absolute { display: none !important; }
-.page-enter > section:first-child .relative { gap: 1.25rem !important; }
-.page-enter > section:first-child h1 { margin-top: .45rem !important; font-size: clamp(1.9rem, 4vw, 3rem) !important; line-height: 1.05 !important; }
-.page-enter > section:first-child :is(.text-white, .text-white\/65, .text-white\/55) { color: rgba(23, 33, 63, .62) !important; }
-.page-enter > section:first-child :is(.bg-white\/10, .bg-white\/15) { background: var(--surface-muted) !important; color: var(--ink) !important; }
+.page-enter > section:first-child:not(.keeps-surface) > .absolute { display: none !important; }
+.page-enter > section:first-child:not(.keeps-surface) .relative { gap: 1.25rem !important; }
+.page-enter > section:first-child:not(.keeps-surface) h1 { margin-top: .45rem !important; font-size: clamp(1.9rem, 4vw, 3rem) !important; line-height: 1.05 !important; }
+.page-enter > section:first-child:not(.keeps-surface) :is(.text-white, .text-white\/65, .text-white\/60, .text-white\/55, .text-white\/45) { color: rgba(38, 50, 56, .62) !important; }
+.page-enter > section:first-child:not(.keeps-surface) :is(.bg-white\/10, .bg-white\/15) { background: var(--mint) !important; color: var(--ink) !important; }
+.page-enter > section:first-child:not(.keeps-surface) .text-bean { color: var(--grass-shade) !important; }
+.page-enter > section:first-child:not(.keeps-surface) .bg-bean { background: var(--grass-shade) !important; }
+
+/* Flat surfaces: the theme separates blocks with mint rules and tinted panels, not shadows. */
 .page-enter :is(.shadow-soft, .shadow-float) { box-shadow: none !important; }
-.page-enter :is([class*="rounded-[22px]"], [class*="rounded-[26px]"]) { border-radius: 18px !important; }
+.page-enter :is([class*="rounded-[22px]"], [class*="rounded-[26px]"], [class*="rounded-[28px]"]) { border-radius: 18px !important; }
+.page-enter :is(.text-ink\/45, .text-ink\/50, .text-ink\/55, .text-ink\/60, .text-ink\/65) { color: rgba(38, 50, 56, .68) !important; }
+
+/* Committing action = grass with a pressed edge; navigational action = sky. Matches the account hub. */
+.cta-grass, .cta-sky {
+  border-radius: 16px;
+  color: #fff;
+  transition: background-color .15s ease;
+}
+.cta-grass { background: var(--grass); box-shadow: 0 3px 0 var(--grass-shade); }
+.cta-grass:hover:not(:disabled) { background: var(--grass-lift); }
+.cta-sky { background: var(--iris); box-shadow: 0 3px 0 var(--iris-shade); }
+.cta-sky:hover:not(:disabled) { background: var(--iris-lift); }
+.cta-grass:disabled, .cta-sky:disabled { box-shadow: none; }
 
 @keyframes page-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; } }

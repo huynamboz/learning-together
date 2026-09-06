@@ -28,7 +28,7 @@ const navItems = [
       <div class="ml-auto flex items-center gap-1.5">
         <NuxtLink to="/upgrade" class="hidden rounded-xl bg-ink px-4 py-2.5 text-xs font-bold text-white shadow-soft transition hover:-translate-y-0.5 hover:bg-iris focus-ring sm:block">Nâng cấp</NuxtLink>
         <span class="hidden rounded-xl bg-white px-2.5 py-2 text-xs font-bold text-ink/70 sm:block">◷ 13m</span>
-        <span class="hidden rounded-xl bg-[#FFF6DF] px-2.5 py-2 text-xs font-bold text-[#9A6A00] sm:block">♨ 1</span>
+        <span class="hidden rounded-xl bg-sun px-2.5 py-2 text-xs font-bold text-[#9A6A00] sm:block">♨ 1</span>
         <div class="relative">
           <button class="grid h-10 w-10 place-items-center rounded-xl text-ink/65 transition hover:bg-white focus-ring" aria-label="Thông báo" :aria-expanded="notificationOpen" @click="notificationOpen = !notificationOpen"><AppIcon icon="solar:bell-bing-bold" :size="20" /><span class="sr-only">Thông báo</span></button>
           <div v-if="notificationOpen" class="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-line bg-white p-4 shadow-float" role="status">

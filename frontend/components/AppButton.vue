@@ -19,10 +19,10 @@ const props = withDefaults(defineProps<{
 const classes = computed(() => [
   'app-button inline-flex items-center justify-center gap-2 rounded-2xl font-extrabold transition focus-ring disabled:cursor-not-allowed disabled:opacity-45',
   props.size === 'sm' ? 'px-3 py-2 text-xs' : props.size === 'lg' ? 'px-5 py-3.5 text-sm' : 'px-4 py-3 text-xs',
-  props.variant === 'accent' ? 'bg-iris text-white hover:bg-[#1288C8]' : '',
-  props.variant === 'secondary' ? 'border border-line bg-white text-ink/70 hover:border-iris/45 hover:bg-paper' : '',
-  props.variant === 'ghost' ? 'text-ink/60 hover:bg-paper hover:text-ink' : '',
-  props.variant === 'primary' ? 'bg-ink text-white hover:bg-iris' : ''
+  props.variant === 'accent' ? 'bg-iris text-white shadow-press-sky hover:bg-[#42BAF2] disabled:shadow-none' : '',
+  props.variant === 'secondary' ? 'border border-line bg-white text-ink/70 hover:border-grass/45 hover:bg-mint' : '',
+  props.variant === 'ghost' ? 'text-ink/60 hover:bg-mint hover:text-ink' : '',
+  props.variant === 'primary' ? 'bg-grass text-white shadow-press hover:bg-[#78DB28] disabled:shadow-none' : ''
 ]);
 </script>
 
