@@ -32,6 +32,7 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 - [Phase 13 — Account Hub and Profile](./implementation-plan/phase-13-account-hub-profile-plan.md)
 - [Phase 13 — Account Hub browser verification](./implementation-plan/phase-13-browser-verification.md)
 - [Phase 14 — Theme unification và learner home verification](./implementation-plan/phase-14-theme-unification-verification.md)
+- [Phase 15 — Admin console routes, toast và dialog](./implementation-plan/phase-15-admin-console-and-overlays-verification.md)
 - [Tài khoản, gói học và affiliate](./09-account-and-monetization.md)
 - [Blog, giới thiệu và feedback](./10-blog-about-feedback.md)
 - [Pháp lý, footer và tương thích route](./11-legal-and-navigation.md)
@@ -56,7 +57,7 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 
 ## Implementation planning
 
-Bộ planning nằm trong [docs/implementation-plan](./implementation-plan/00-master-plan.md), gồm requirements/route map, backend architecture, domain model, API contract, storage abstraction, admin operations, design system, frontend IA, testing, security/devops và phase/commit checklist. Các phase đã triển khai có browser verification riêng; log mới nhất là [Phase 14](./implementation-plan/phase-14-theme-unification-verification.md).
+Bộ planning nằm trong [docs/implementation-plan](./implementation-plan/00-master-plan.md), gồm requirements/route map, backend architecture, domain model, API contract, storage abstraction, admin operations, design system, frontend IA, testing, security/devops và phase/commit checklist. Các phase đã triển khai có browser verification riêng; log mới nhất là [Phase 15](./implementation-plan/phase-15-admin-console-and-overlays-verification.md).
 
 ## Ghi chú triển khai
 
