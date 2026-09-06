@@ -335,7 +335,11 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 .hub-panel > :is(template, div) { max-width: 55rem; }
 .hub-panel :is(.bg-\[\#E7F7F1\]) { background: var(--hub-mint) !important; }
 .hub-panel :is(.bg-\[\#FFF6DF\]) { background: #fff7d6 !important; }
-.hub-panel button[class*="bg-ink"] { background: var(--hub-green) !important; color: var(--hub-ink) !important; box-shadow: 0 3px 0 #46a900; }
+.hub-panel button[class*="bg-ink"], .hub-panel a[class*="bg-ink"] {
+  border-radius: 16px;
+  corner-shape: squircle;
+}
+.hub-panel button[class*="bg-ink"] { background: var(--hub-green) !important; color: #fff !important; box-shadow: 0 3px 0 #46a900; }
 .hub-panel button[class*="bg-ink"]:hover { background: #78db28 !important; }
 .hub-panel a[class*="bg-ink"] { background: var(--hub-blue) !important; color: white !important; box-shadow: 0 3px 0 #1288c8; }
 .hub-panel a[class*="bg-ink"]:hover { background: #42baf2 !important; }
