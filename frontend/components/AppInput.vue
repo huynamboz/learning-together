@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { useId } from 'vue';
+import { useAttrs, useId } from 'vue';
+
+defineOptions({ inheritAttrs: false });
 
 const props = withDefaults(defineProps<{
-  modelValue?: string | number;
+  modelValue?: string | number | null;
   label?: string;
   hint?: string;
   error?: string;
@@ -23,6 +25,11 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
 const generatedId = useId();
 const inputId = computed(() => props.id || generatedId);
+const attrs = useAttrs();
+const inputAttrs = computed(() => {
+  const { class: _class, style: _style, ...rest } = attrs;
+  return rest;
+});
 </script>
 
 <template>
@@ -38,6 +45,7 @@ const inputId = computed(() => props.id || generatedId);
       :disabled="disabled"
       :maxlength="maxlength"
       :minlength="minlength"
+      v-bind="inputAttrs"
       class="app-input w-full rounded-2xl border border-line px-4 py-3 text-sm text-ink outline-none transition placeholder:text-ink/35 disabled:cursor-not-allowed disabled:opacity-60"
       :class="error ? 'border-[#D66B5D]' : ''"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
