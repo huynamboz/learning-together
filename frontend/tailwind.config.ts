@@ -9,7 +9,7 @@ export default {
         iris: '#5D5FEF',
         bean: '#F4B942',
         leaf: '#62C7A5',
-        paper: '#FFF8E7',
+        paper: '#FFFFFF',
         line: '#E3E7F0'
       },
       boxShadow: {
