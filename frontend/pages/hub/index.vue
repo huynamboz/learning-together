@@ -283,7 +283,7 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 .hub-page :is(.shadow-soft, .shadow-float) { box-shadow: none !important; }
 .hub-page :is(.border-line) { border-color: #dcecdf !important; }
 .hub-page :is(.bg-white) { background-color: transparent !important; }
-.hub-page :is(.bg-paper) { background-color: var(--hub-mint) !important; }
+.hub-page :is(.bg-paper):not(input):not(textarea) { background-color: var(--hub-mint) !important; }
 .hub-page :is(input, textarea) { border-color: #bfe3c7 !important; background: #f5f6f7 !important; }
 .hub-page :is(input, textarea):focus,
 .hub-page :is(input, textarea):focus-visible {
