@@ -9,14 +9,15 @@ type AdminTab = 'content' | 'media' | 'writing' | 'users' | 'import' | 'audit';
 
 const { request, accessToken } = useAppApi();
 const tab = ref<AdminTab>('content');
-const tabs: ReadonlyArray<{ key: AdminTab; label: string }> = [
-  { key: 'content', label: 'Content' },
-  { key: 'media', label: 'Media' },
-  { key: 'writing', label: 'Writing review' },
-  { key: 'users', label: 'Người dùng' },
-  { key: 'import', label: 'Import' },
-  { key: 'audit', label: 'Audit & health' }
+const tabs: ReadonlyArray<{ key: AdminTab; label: string; detail: string; icon: string }> = [
+  { key: 'content', label: 'Content', detail: 'Kho bài học và publish', icon: 'solar:library-bold' },
+  { key: 'media', label: 'Media', detail: 'Upload và asset library', icon: 'solar:music-library-2-bold' },
+  { key: 'writing', label: 'Writing review', detail: 'Chấm bài đang chờ', icon: 'solar:pen-new-square-bold' },
+  { key: 'users', label: 'Người dùng', detail: 'Quyền và trạng thái', icon: 'solar:users-group-rounded-bold' },
+  { key: 'import', label: 'Import', detail: 'Nhập content theo batch', icon: 'solar:cloud-upload-bold' },
+  { key: 'audit', label: 'Audit & health', detail: 'Theo dõi vận hành', icon: 'solar:chart-2-bold' }
 ];
+const activeTab = computed(() => tabs.find((item) => item.key === tab.value) ?? tabs[0]);
 
 const notice = ref('');
 const rows = ref<ContentRow[]>([]);
@@ -218,18 +219,34 @@ async function updateUserStatus(user: AdminUser, status: AdminUser['status']) {
 </script>
 
 <template>
-  <div class="page-enter space-y-6">
-    <section class="rounded-[26px] bg-ink p-6 text-white shadow-float sm:p-9">
-      <div class="flex flex-wrap items-end justify-between gap-4">
-        <div class="min-w-0"><p class="text-xs font-extrabold tracking-[0.18em] text-bean">ADMIN CONSOLE</p><h1 class="mt-3 text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Vận hành rõ ràng.</h1><p class="mt-3 max-w-xl text-sm leading-6 text-white/65">Publish media thật, giữ phiên bản content và đưa feedback Writing về đúng người học.</p></div>
-        <div class="rounded-2xl bg-white/10 px-4 py-3 text-right"><p class="text-[11px] text-white/55">Writing cần xem</p><p class="mt-1 text-xl font-extrabold text-bean">{{ pendingReviews }}</p></div>
-      </div>
-    </section>
+  <div class="admin-shell page-enter">
+    <aside class="admin-sidebar sticky top-24 hidden h-[calc(100vh-8rem)] min-h-[620px] flex-col rounded-[24px] bg-ink p-4 text-white lg:flex">
+      <NuxtLink to="/" class="flex items-center gap-3 rounded-2xl px-3 py-3 transition hover:bg-white/10 focus-ring">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-iris text-lg font-black">Đ</span>
+        <span class="min-w-0"><span class="block text-sm font-black">Đậu TOEIC</span><span class="mt-0.5 block text-[11px] text-white/50">Admin workspace</span></span>
+      </NuxtLink>
+      <div class="mt-7 px-3"><p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/40">Vận hành</p><p class="mt-2 text-xs leading-5 text-white/55">Quản lý nội dung học và dữ liệu learner ở một nơi.</p></div>
+      <nav class="mt-5 flex-1 space-y-1" aria-label="Admin modules">
+        <button v-for="item in tabs" :key="item.key" :class="['flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition focus-ring', tab === item.key ? 'bg-iris text-white' : 'text-white/65 hover:bg-white/10 hover:text-white']" @click="tab = item.key">
+          <AppIcon :icon="item.icon" :size="20" />
+          <span class="min-w-0"><span class="block text-xs font-extrabold">{{ item.label }}</span><span class="mt-0.5 block truncate text-[10px] opacity-65">{{ item.detail }}</span></span>
+        </button>
+      </nav>
+      <div class="rounded-2xl border border-white/10 bg-white/10 p-3"><div class="flex items-center justify-between gap-3"><span class="text-[11px] font-bold text-white/60">Writing queue</span><span class="text-lg font-black text-bean">{{ pendingReviews }}</span></div><p class="mt-1 text-[10px] leading-4 text-white/45">Bài đang chờ bạn xem và gửi feedback.</p></div>
+      <NuxtLink to="/" class="mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-white/55 transition hover:bg-white/10 hover:text-white focus-ring"><AppIcon icon="solar:arrow-left-linear" :size="16" />Về dashboard học</NuxtLink>
+    </aside>
 
-    <div class="flex gap-1 overflow-x-auto rounded-2xl border border-line bg-white p-1 shadow-soft" role="tablist" aria-label="Admin modules">
-      <button v-for="item in tabs" :key="item.key" :class="['shrink-0 rounded-xl px-4 py-3 text-xs font-extrabold transition focus-ring', tab === item.key ? 'bg-ink text-white' : 'text-ink/55 hover:bg-paper']" @click="tab = item.key">{{ item.label }}</button>
-    </div>
-    <p v-if="notice" class="rounded-xl bg-bean/20 p-3 text-xs font-bold text-[#8B6400]" role="status">{{ notice }}</p>
+    <div class="min-w-0">
+      <header class="admin-topbar flex items-center justify-between gap-4 border-b border-line pb-4">
+        <div><p class="text-[11px] font-extrabold uppercase tracking-[0.16em] text-ink/40">Admin console</p><p class="mt-1 text-sm font-extrabold">{{ activeTab.label }}</p></div>
+        <div class="flex items-center gap-2"><span class="hidden rounded-full bg-leaf/10 px-3 py-2 text-[11px] font-extrabold text-leaf sm:inline-flex">API workspace</span><NuxtLink to="/hub?tab=profile" class="grid h-9 w-9 place-items-center rounded-full bg-iris text-xs font-black text-white focus-ring">N</NuxtLink></div>
+      </header>
+      <nav class="admin-mobile-nav mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden" role="tablist" aria-label="Admin modules">
+        <button v-for="item in tabs" :key="item.key" :class="['flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-extrabold transition focus-ring', tab === item.key ? 'bg-ink text-white' : 'bg-paper text-ink/55 hover:bg-line/50']" @click="tab = item.key"><AppIcon :icon="item.icon" :size="16" />{{ item.label }}</button>
+      </nav>
+      <main class="admin-content mt-6">
+        <div class="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6"><div><p class="text-xs font-extrabold text-iris">{{ activeTab.detail }}</p><h1 class="mt-2 text-3xl font-extrabold tracking-[-0.05em] sm:text-4xl">{{ activeTab.label }}</h1><p class="mt-2 max-w-2xl text-sm leading-6 text-ink/55">{{ activeTab.key === 'content' ? 'Giữ kho bài học rõ ràng, có version và publish đúng lúc.' : activeTab.key === 'media' ? 'Kiểm tra asset trước khi đưa vào trải nghiệm học thật.' : activeTab.key === 'writing' ? 'Review thủ công để feedback đến đúng người học.' : activeTab.key === 'users' ? 'Theo dõi quyền truy cập và trạng thái tài khoản.' : activeTab.key === 'import' ? 'Chuẩn hóa batch content trước khi đưa vào kho.' : 'Theo dõi sức khỏe API và dấu vết vận hành.' }}</p></div><div class="rounded-2xl bg-bean/15 px-4 py-3 text-right"><p class="text-[11px] font-bold text-ink/50">Writing cần xem</p><p class="mt-1 text-xl font-black text-[#A87400]">{{ pendingReviews }}</p></div></div>
+        <p v-if="notice" class="mt-5 rounded-xl bg-bean/20 p-3 text-xs font-bold text-[#8B6400]" role="status">{{ notice }}</p>
 
     <section v-if="tab === 'content'" class="grid gap-5 lg:grid-cols-[1.25fr_.75fr]">
       <div class="min-w-0 rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-6">
@@ -257,10 +274,18 @@ async function updateUserStatus(user: AdminUser, status: AdminUser['status']) {
     <section v-else-if="tab === 'import'" class="grid gap-5 lg:grid-cols-[1fr_.8fr]"><div class="rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-7"><p class="text-xs font-extrabold text-ink/45">BATCH IMPORT</p><h2 class="mt-1 text-xl font-extrabold">Import content JSON</h2><p class="mt-2 text-xs leading-5 text-ink/55">Mỗi row cần externalKey, type, title và payload object. API trả lỗi theo từng row.</p><textarea v-model="importText" rows="16" class="mt-5 w-full rounded-2xl border border-line bg-paper px-4 py-3 font-mono text-xs leading-6 outline-none focus:border-iris" aria-label="Import JSON" /><button class="mt-4 rounded-xl bg-ink px-5 py-3 text-xs font-extrabold text-white transition hover:bg-iris focus-ring" @click="runImport">Validate & import</button></div><div class="rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-7"><p class="text-xs font-extrabold text-ink/45">VALIDATION RESULT</p><div v-if="importResult" class="mt-5 rounded-2xl p-4" :class="importResult.valid ? 'bg-leaf/10' : 'bg-[#FFE6E2]'"><p class="text-sm font-extrabold">{{ importResult.valid ? 'Batch hợp lệ' : 'Batch có lỗi' }}</p><p class="mt-2 text-xs text-ink/60">{{ importResult.normalized?.length ?? 0 }} row đã normalize · {{ importResult.errors?.length ?? 0 }} lỗi</p><ul v-if="importResult.errors?.length" class="mt-4 space-y-2 text-xs text-[#B5473A]"><li v-for="error in importResult.errors" :key="`${error.rowNumber}-${error.field}`">Row {{ error.rowNumber }} · {{ error.field }}: {{ error.message }}</li></ul></div><div v-else class="mt-5 rounded-2xl bg-paper p-4 text-xs leading-6 text-ink/55">Chưa có kết quả. Validate trước khi import để tránh batch lỗi đi vào kho content.</div></div></section>
 
     <section v-else class="space-y-5"><div class="grid gap-5 md:grid-cols-3"><div v-for="item in [{ label: 'API health', value: 'Online', detail: 'NestJS · /api/v1/health', tone: 'text-leaf' }, { label: 'Content live', value: `${overview?.content.PUBLISHED ?? 0} published`, detail: `${overview?.content.DRAFT ?? 0} draft cần hoàn thiện`, tone: 'text-iris' }, { label: 'Storage', value: 'Configured', detail: `${overview?.media.READY ?? 0} asset ready · provider chọn server-side`, tone: 'text-[#A87400]' } ]" :key="item.label" class="rounded-[22px] border border-line bg-white p-5 shadow-soft"><p class="text-xs font-extrabold text-ink/45">{{ item.label }}</p><p :class="['mt-4 flex items-center gap-2 text-2xl font-extrabold', item.tone]"><AppIcon icon="solar:record-circle-bold" :size="18" />{{ item.value }}</p><p class="mt-2 text-xs leading-5 text-ink/50">{{ item.detail }}</p></div></div><div class="rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-6"><div class="flex flex-wrap items-end justify-between gap-3"><div><p class="text-xs font-extrabold text-ink/45">AUDIT TRAIL</p><h2 class="mt-1 text-xl font-extrabold">Sự kiện vận hành gần đây</h2></div><button class="rounded-xl border border-line px-3 py-2 text-xs font-extrabold hover:bg-paper focus-ring" :disabled="operationsLoading" @click="loadOperations">{{ operationsLoading ? 'Đang tải...' : 'Làm mới' }}</button></div><ol class="mt-5 divide-y divide-line"><li v-for="entry in auditEntries" :key="entry.id" class="flex flex-wrap items-center justify-between gap-2 py-3 text-xs"><div><p class="font-extrabold">{{ entry.action }} <span class="font-normal text-ink/45">· {{ entry.entity }}</span></p><p class="mt-1 text-ink/45">{{ entry.actor?.displayName || entry.actor?.email || 'System' }} · {{ dateTime(entry.createdAt) }}</p></div><span class="rounded-lg bg-paper px-2 py-1 font-bold text-ink/55">{{ entry.entityId ? entry.entityId.slice(0, 8) : 'SYSTEM' }}</span></li><li v-if="!operationsLoading && !auditEntries.length" class="py-8 text-center text-xs text-ink/45">Chưa có sự kiện audit hoặc bạn chưa có quyền admin.</li></ol></div></section>
+      </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.admin-shell { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+.admin-sidebar { box-shadow: 0 18px 48px rgba(23, 33, 63, .12); }
+.admin-topbar { min-height: 3.1rem; }
+@media (min-width: 1024px) {
+  .admin-shell { grid-template-columns: 248px minmax(0, 1fr); align-items: start; }
+}
 @media (max-width: 639px) {
   .page-enter .grid > * { min-width: 0; }
 }
