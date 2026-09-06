@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 208 40" width="208" height="40" role="img" aria-label="Ms Chole TOEIC">
+  <title>Ms Chole TOEIC — lockup for dark backgrounds</title>
+  <g>
+    <path d="M26.02 11.40 A 10.5 10.5 0 1 0 26.02 28.60" fill="none" stroke="#58CC02" stroke-width="4.2" stroke-linecap="round"/>
+  <circle cx="26.02" cy="11.40" r="2.9" fill="#F4B942"/>
+  </g>
+  <text x="54" y="26.5" font-family="Be Vietnam Pro, ui-sans-serif, system-ui, sans-serif" font-size="17.5" font-weight="800" letter-spacing="-0.6" fill="#FFFFFF">Ms Chole</text>
+  <text x="151" y="26" font-family="Be Vietnam Pro, ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="700" letter-spacing="1.4" fill="rgba(255,255,255,.5)">TOEIC</text>
+</svg>

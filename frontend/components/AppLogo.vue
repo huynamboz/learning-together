@@ -2,14 +2,34 @@
 /**
  * The mark is a C that is also an unfinished progress ring: the stroke stops short and a gold
  * dot sits where the learner has got to. It carries the initial and the study-trail idea at once.
+ *
+ * Geometry here matches public/brand/*.svg and scripts/build-brand-assets.mjs — change one,
+ * change all three.
  */
-withDefaults(defineProps<{
+type Tone = 'dark' | 'light' | 'transparent' | 'mono-ink' | 'mono-white';
+
+const props = withDefaults(defineProps<{
   size?: number;
   /** `lockup` adds the wordmark; `mark` is the tile alone, for tight spaces and favicons. */
   variant?: 'mark' | 'lockup';
-  /** `onDark` flips the wordmark for the admin rail. */
+  /** Which mark variant to draw. `dark` is the default tile for light surfaces. */
+  tone?: Tone;
+  /** Flips the wordmark for dark surfaces such as the admin rail. */
   onDark?: boolean;
-}>(), { size: 36, variant: 'lockup', onDark: false });
+}>(), { size: 36, variant: 'lockup', tone: 'dark', onDark: false });
+
+const INK = '#263238';
+const GRASS = '#58CC02';
+const GOLD = '#F4B942';
+const WHITE = '#FFFFFF';
+
+const palette = computed(() => ({
+  dark: { tile: INK, stroke: GRASS, dot: GOLD },
+  light: { tile: WHITE, stroke: GRASS, dot: GOLD },
+  transparent: { tile: '', stroke: GRASS, dot: GOLD },
+  'mono-ink': { tile: '', stroke: INK, dot: INK },
+  'mono-white': { tile: '', stroke: WHITE, dot: WHITE }
+}[props.tone]));
 </script>
 
 <template>
@@ -22,15 +42,15 @@ withDefaults(defineProps<{
       aria-label="Ms Chole TOEIC"
       class="logo-mark"
     >
-      <rect width="40" height="40" rx="11.5" fill="#263238" />
+      <rect v-if="palette.tile" width="40" height="40" rx="11.5" :fill="palette.tile" />
       <path
         d="M26.02 11.40 A 10.5 10.5 0 1 0 26.02 28.60"
         fill="none"
-        stroke="#58CC02"
+        :stroke="palette.stroke"
         stroke-width="4.2"
         stroke-linecap="round"
       />
-      <circle cx="26.02" cy="11.40" r="2.9" fill="#F4B942" />
+      <circle cx="26.02" cy="11.40" r="2.9" :fill="palette.dot" />
     </svg>
 
     <span v-if="variant === 'lockup'" class="logo-words">
