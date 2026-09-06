@@ -1,16 +1,121 @@
 <script setup lang="ts">
-import { countWords } from '~/utils/learning';
+import type { CatalogItem, LessonSummary } from '~/utils/catalog';
+import { toLessonSummary } from '~/utils/catalog';
+
 type WritingHistory = { id: string; part: number; wordCount: number; status: string; submittedAt: string | null; createdAt: string; grade: { overall: number | null; feedback: unknown; createdAt: string } | null };
+
 const { request, accessToken } = useAppApi();
-const body = ref(''); const submitting = ref(false); const status = ref(''); const result = ref<{ submissionId?: string; status?: string; creditsRemaining?: number } | null>(null); const history = ref<WritingHistory[]>([]); const historyLoading = ref(false);
-const words = computed(() => countWords(body.value));
+const toast = useToast();
+
+const prompts = ref<LessonSummary[]>([]);
+const history = ref<WritingHistory[]>([]);
+const loading = ref(true);
+const historyLoading = ref(false);
+const failed = ref(false);
+const part = ref<1 | 2>(1);
+
+const visible = computed(() => prompts.value.filter((prompt) => (prompt.part ?? 1) === part.value));
+const graded = computed(() => history.value.filter((item) => item.status === 'GRADED').length);
 const dateLabel = (value: string | null) => value ? new Date(value).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : 'Bản nháp';
-function feedbackSummary(value: unknown) { return value && typeof value === 'object' && typeof (value as Record<string, unknown>).summary === 'string' ? (value as Record<string, string>).summary : ''; }
-async function loadHistory() { if (!accessToken.value) { history.value = []; return; } historyLoading.value = true; try { history.value = await request<WritingHistory[]>('/writing/submissions'); } catch { status.value ||= 'Chưa tải được lịch sử bài viết.'; } finally { historyLoading.value = false; } }
-async function submit() { if (!body.value.trim() || submitting.value) return; if (!accessToken.value) { status.value = 'Đăng nhập để gửi bài và lưu feedback vào hồ sơ.'; return; } submitting.value = true; status.value = ''; try { result.value = await request('/writing/submissions', { method: 'POST', body: { part: 1, body: body.value } }); status.value = 'Bài viết đã được gửi. Đậu sẽ trả feedback theo tiêu chí TOEIC.'; body.value = ''; await loadHistory(); } catch { status.value = 'Chưa gửi được bài. Kiểm tra phiên đăng nhập hoặc lượt chấm rồi thử lại.'; } finally { submitting.value = false; } }
-onMounted(loadHistory);
+
+async function loadCatalog() {
+  loading.value = true;
+  try { prompts.value = (await request<CatalogItem[]>('/content', { query: { type: 'WRITING' } })).map(toLessonSummary); }
+  catch { failed.value = true; }
+  finally { loading.value = false; }
+}
+
+async function loadHistory() {
+  if (!accessToken.value) { history.value = []; return; }
+  historyLoading.value = true;
+  try { history.value = await request<WritingHistory[]>('/writing/submissions'); }
+  catch { toast.error('Chưa tải được lịch sử bài viết', 'Kiểm tra phiên đăng nhập rồi thử lại.'); }
+  finally { historyLoading.value = false; }
+}
+
+onMounted(async () => { await Promise.all([loadCatalog(), loadHistory()]); });
 </script>
 
 <template>
-  <div class="page-enter space-y-6"><section class="rounded-[26px] bg-sun p-6 shadow-soft sm:p-9"><p class="text-xs font-extrabold tracking-[0.18em] text-[#A87400]">WRITING LAB</p><h1 class="mt-3 text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Viết rõ ý hơn.</h1><p class="mt-3 max-w-xl text-sm leading-6 text-ink/60">Viết một đoạn ngắn theo prompt, rồi nhận góp ý về nội dung, ngữ pháp và từ vựng.</p></section><div class="grid gap-6 lg:grid-cols-[1.2fr_.8fr]"><section class="min-w-0 rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-8"><div class="rounded-2xl bg-mint p-4"><p class="text-xs font-extrabold text-iris">PROMPT · PART 1</p><p class="mt-2 text-sm font-bold leading-6">Describe a useful change you would make to your daily study routine.</p></div><label class="mt-6 block text-xs font-bold" for="writing-body">Bài viết của bạn</label><textarea id="writing-body" v-model="body" rows="12" class="mt-2 w-full rounded-2xl border border-line bg-mint px-4 py-3 text-sm leading-7 outline-none focus:border-iris" placeholder="Bắt đầu viết ở đây..." /><div class="mt-3 flex flex-wrap items-center justify-between gap-3"><span class="text-xs text-ink/45">{{ words }} từ · Mục tiêu 80–120 từ</span><AppButton variant="accent" :loading="submitting" :disabled="words === 0" @click="submit">{{ submitting ? 'Đang gửi...' : 'Gửi chấm bài' }}</AppButton></div><p v-if="status" class="mt-4 rounded-xl p-3 text-xs font-bold" :class="status.startsWith('Bài') ? 'bg-leaf/10 text-ink' : 'bg-bean/20 text-[#8B6400]'">{{ status }} <span v-if="result?.creditsRemaining !== undefined" class="font-medium text-ink/55">Còn {{ result.creditsRemaining }} lượt.</span></p></section><aside class="min-w-0 rounded-[22px] border border-line bg-white p-5 shadow-soft"><div class="flex items-end justify-between gap-3"><div><p class="text-xs font-extrabold text-ink/45">BÀI GẦN ĐÂY</p><h2 class="mt-1 text-xl font-extrabold">Lịch sử feedback</h2></div><span v-if="historyLoading" class="text-xs text-ink/45">Đang tải...</span></div><ol v-if="history.length" class="mt-5 space-y-3"><li v-for="item in history" :key="item.id" class="rounded-2xl bg-mint p-4"><div class="flex items-center justify-between gap-3"><p class="text-xs font-extrabold">Part {{ item.part }} · {{ item.wordCount }} từ</p><span :class="['rounded-lg px-2 py-1 text-[10px] font-extrabold', item.status === 'GRADED' ? 'bg-leaf/15 text-[#28896D]' : 'bg-iris/10 text-iris']">{{ item.status }}</span></div><p class="mt-2 text-xs text-ink/50">{{ dateLabel(item.submittedAt ?? item.createdAt) }} <span v-if="item.grade?.overall !== null && item.grade">· {{ item.grade.overall }}/10</span></p><p v-if="feedbackSummary(item.grade?.feedback)" class="mt-3 rounded-xl bg-white px-3 py-2 text-xs leading-5 text-ink/65">{{ feedbackSummary(item.grade?.feedback) }}</p></li></ol><div v-else-if="!historyLoading" class="mt-5 rounded-2xl bg-mint p-4 text-xs leading-6 text-ink/55">Bài viết đã gửi sẽ xuất hiện ở đây cùng trạng thái chấm và feedback.</div></aside></div></div>
+  <div class="page-enter space-y-6">
+    <section class="rounded-[26px] bg-mint p-6 sm:p-9">
+      <p class="text-xs font-extrabold tracking-[0.18em] text-[#46A900]">WRITING LAB</p>
+      <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Viết rõ ý hơn.</h1>
+          <p class="mt-3 max-w-xl text-sm leading-6 text-ink/60">Chọn một đề trong danh sách, viết theo yêu cầu rồi gửi để nhận nhận xét theo tiêu chí TOEIC.</p>
+        </div>
+        <span class="rounded-xl bg-white/70 px-3 py-2 text-xs font-extrabold text-ink/60">{{ prompts.length }} đề · {{ graded }} bài đã chấm</span>
+      </div>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-start">
+      <section class="min-w-0 rounded-[22px] border border-line p-5 sm:p-6">
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Chọn part">
+          <button :class="['part-tab focus-ring', part === 1 ? 'is-active' : '']" @click="part = 1">Part 1 · Picture</button>
+          <button :class="['part-tab focus-ring', part === 2 ? 'is-active' : '']" @click="part = 2">Part 2 · Email</button>
+        </div>
+
+        <div class="mt-6 flex items-end justify-between gap-3">
+          <h2 class="text-xl font-extrabold">{{ visible.length }} đề</h2>
+          <button class="rounded-xl border border-line px-3 py-2 text-xs font-extrabold hover:bg-mint focus-ring" :disabled="loading" @click="loadCatalog">{{ loading ? 'Đang tải…' : 'Làm mới' }}</button>
+        </div>
+
+        <div class="mt-4">
+          <LessonList
+            :lessons="visible"
+            :loading="loading"
+            tone="grass"
+            icon="solar:pen-new-square-bold"
+            action-label="Viết bài"
+            :href="(lesson) => `/write/${lesson.slug}`"
+            :empty-title="failed ? 'Chưa tải được kho đề viết' : 'Part này chưa có đề nào'"
+            :empty-detail="failed ? 'Kiểm tra kết nối tới API rồi tải lại danh sách.' : 'Admin publish đề Writing trong console là danh sách này có nội dung.'"
+          />
+        </div>
+      </section>
+
+      <aside class="space-y-4">
+        <section class="rounded-[22px] border border-line p-5 sm:p-6">
+          <div class="flex items-end justify-between gap-3">
+            <div><p class="text-xs font-extrabold text-ink/45">BÀI GẦN ĐÂY</p><h2 class="mt-1 text-lg font-extrabold">Lịch sử feedback</h2></div>
+            <button v-if="accessToken" class="rounded-xl border border-line px-2.5 py-1.5 text-[11px] font-extrabold hover:bg-mint focus-ring" :disabled="historyLoading" @click="loadHistory">{{ historyLoading ? '…' : 'Tải lại' }}</button>
+          </div>
+
+          <ol v-if="history.length" class="mt-4 space-y-2.5">
+            <li v-for="item in history" :key="item.id" class="rounded-2xl bg-mint p-4">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-xs font-extrabold">Part {{ item.part }} · {{ item.wordCount }} từ</p>
+                <span :class="['rounded-lg px-2 py-0.5 text-[10px] font-extrabold', item.status === 'GRADED' ? 'bg-white text-[#46A900]' : 'bg-white text-iris']">{{ item.status }}</span>
+              </div>
+              <p class="mt-1.5 text-[11px] text-ink/45">{{ dateLabel(item.submittedAt ?? item.createdAt) }}<span v-if="item.grade?.overall !== null && item.grade"> · {{ item.grade.overall }}/10</span></p>
+            </li>
+          </ol>
+          <p v-else-if="!accessToken" class="mt-4 rounded-2xl bg-mint p-4 text-xs leading-5 text-ink/55">Đăng nhập để lưu bài và xem nhận xét của reviewer.</p>
+          <p v-else class="mt-4 rounded-2xl bg-mint p-4 text-xs leading-5 text-ink/55">Chưa có bài nào được gửi. Chọn một đề để bắt đầu.</p>
+        </section>
+
+        <section class="rounded-[22px] bg-sun p-5">
+          <p class="text-xs font-extrabold text-[#A87400]">CÁCH CHẤM</p>
+          <p class="mt-2 text-xs leading-5 text-ink/65">Bài được reviewer chấm thủ công theo rubric rồi trả về lịch sử của bạn. Không có điểm do máy tạo sẵn.</p>
+        </section>
+      </aside>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.part-tab {
+  flex: 1 1 10rem;
+  border-radius: 14px;
+  corner-shape: squircle;
+  border: 1px solid var(--line);
+  padding: .7rem 1rem;
+  font-size: .75rem;
+  font-weight: 800;
+  color: rgba(38, 50, 56, .62);
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.part-tab:hover { background: var(--mint); }
+.part-tab.is-active { border-color: var(--grass); background: var(--grass); color: #fff; }
+</style>

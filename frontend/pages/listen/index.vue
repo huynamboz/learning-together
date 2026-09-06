@@ -1,52 +1,94 @@
 <script setup lang="ts">
-type PublishedContent = { id: string; title: string; part: number | null; level: number | null; payload: Record<string, unknown> };
-type ListeningLesson = { id: string; title: string; part: number; level: number; transcript: string; durationSec: number; mediaUrl?: string; source: 'live' | 'fallback' };
-const { request, accessToken } = useAppApi();
-const config = useRuntimeConfig();
-const mode = ref<'dictation' | 'type'>('dictation');
-const part = ref(1);
-const playedSeconds = ref(0);
-const transcriptVisible = ref(false);
-const answer = ref('');
-const checked = ref(false);
-const saving = ref(false);
-const notice = ref('');
-const liveLessons = ref<ListeningLesson[]>([]);
+import type { CatalogItem } from '~/utils/catalog';
+import { availableParts, filterByPart, toLessonSummary } from '~/utils/catalog';
 
-const fallbackLessons: ListeningLesson[] = [
-  { id: 'fallback-1', title: 'Part 1 · Khởi động với tranh', part: 1, level: 1, transcript: 'A group of people are standing near a building.', durationSec: 22, source: 'fallback' },
-  { id: 'fallback-2', title: 'Part 2 · Nhận diện ý chính', part: 2, level: 1, transcript: 'The speaker is describing a change to a schedule.', durationSec: 18, source: 'fallback' },
-  { id: 'fallback-3', title: 'Part 3 · Câu hỏi và phản hồi', part: 3, level: 1, transcript: 'You will hear a question and three possible responses.', durationSec: 20, source: 'fallback' }
-];
-const lesson = computed(() => liveLessons.value.find((item) => item.part === part.value) ?? fallbackLessons.find((item) => item.part === part.value) ?? fallbackLessons[0]);
-const sessionClock = computed(() => `00:${String(playedSeconds.value).padStart(2, '0')}`);
+const { request } = useAppApi();
+const lessons = ref<ReturnType<typeof toLessonSummary>[]>([]);
+const loading = ref(true);
+const failed = ref(false);
+const activePart = ref<number | 'all'>('all');
 
-function textOf(value: unknown) { return typeof value === 'string' ? value : ''; }
-function numberOf(value: unknown, fallback: number) { return typeof value === 'number' && Number.isFinite(value) ? value : fallback; }
-function mediaUrl(value: unknown) { return typeof value === 'string' ? `${config.public.apiBase}/media/${value}/file` : undefined; }
-async function loadLessons() {
-  try {
-    const content = await request<PublishedContent[]>('/content', { query: { type: 'LISTENING' } });
-    liveLessons.value = content.map((item) => ({ id: item.id, title: item.title, part: item.part ?? 1, level: item.level ?? 1, transcript: textOf(item.payload.transcript), durationSec: numberOf(item.payload.durationSec, 20), mediaUrl: mediaUrl(item.payload.mediaAssetId), source: 'live' as const })).filter((item) => item.transcript);
-  } catch { notice.value = 'Chưa tải được kho nghe; đang dùng bài mẫu trên thiết bị này.'; }
+const parts = computed(() => availableParts(lessons.value));
+const visible = computed(() => filterByPart(lessons.value, activePart.value));
+const withAudio = computed(() => lessons.value.filter((lesson) => lesson.mediaAssetId).length);
+
+async function loadCatalog() {
+  loading.value = true;
+  try { lessons.value = (await request<CatalogItem[]>('/content', { query: { type: 'LISTENING' } })).map(toLessonSummary); }
+  catch { failed.value = true; }
+  finally { loading.value = false; }
 }
 
-function syncAudioProgress(event: Event) { playedSeconds.value = Math.floor((event.target as HTMLAudioElement).currentTime); }
-function selectPart(nextPart: number) { part.value = nextPart; playedSeconds.value = 0; checked.value = false; answer.value = ''; notice.value = ''; }
-async function checkAnswer() {
-  checked.value = true; notice.value = '';
-  if (!accessToken.value || lesson.value.source !== 'live' || playedSeconds.value < 1) return;
-  saving.value = true;
-  try { await request('/learning/study-sessions', { method: 'POST', body: { surface: 'listening', durationSeconds: Math.max(1, playedSeconds.value) } }); notice.value = 'Đã lưu thời lượng luyện nghe vào tiến độ của bạn.'; }
-  catch { notice.value = 'Chưa đồng bộ được thời lượng. Bạn vẫn có thể đối chiếu transcript và thử lại.'; }
-  finally { saving.value = false; }
-}
-onMounted(loadLessons);
+onMounted(loadCatalog);
 </script>
 
 <template>
   <div class="page-enter space-y-6">
-    <section class="rounded-[26px] bg-ink p-6 text-white shadow-float sm:p-9"><div class="flex flex-wrap items-start justify-between gap-5"><div class="min-w-0"><p class="text-xs font-extrabold tracking-[0.18em] text-bean">LISTENING LAB</p><h1 class="mt-3 text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Nghe để bắt nhịp.</h1><p class="mt-3 max-w-xl text-sm leading-6 text-white/65">Tập trung vào một đoạn ngắn, đoán ý chính rồi soi transcript. Mỗi lần nghe đều phải để lại một manh mối.</p></div><div class="rounded-2xl bg-white/10 px-4 py-3 text-right"><p class="text-[11px] text-white/55">Đã nghe phiên này</p><p class="mt-1 text-xl font-extrabold">{{ sessionClock }}</p></div></div><div class="mt-8 flex flex-wrap gap-2" role="tablist" aria-label="Chế độ luyện nghe"><button v-for="item in [{ key: 'dictation', label: 'Dictation' }, { key: 'type', label: 'Nghe chọn đáp án' }]" :key="item.key" :class="['rounded-xl px-4 py-2.5 text-xs font-bold transition focus-ring', mode === item.key ? 'bg-iris text-white shadow-press-sky' : 'bg-white/10 text-white/70 hover:bg-white/15']" @click="mode = item.key as 'dictation' | 'type'">{{ item.label }}</button></div></section>
-    <div class="grid gap-6 lg:grid-cols-[.8fr_1.2fr]"><aside class="rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-6"><p class="text-xs font-extrabold text-ink/45">CHỌN PART</p><div class="mt-4 grid grid-cols-3 gap-2"><button v-for="item in [1, 2, 3]" :key="item" :class="['rounded-xl border px-3 py-3 text-xs font-extrabold transition focus-ring', part === item ? 'border-iris bg-iris text-white' : 'border-line hover:border-iris/40']" @click="selectPart(item)">Part {{ item }}</button></div><div class="mt-6 rounded-2xl bg-mint p-4"><p class="text-xs font-bold">Mẹo của Đậu</p><p class="mt-2 text-xs leading-5 text-ink/55">Nghe lần đầu không nhìn chữ. Hãy ghi lại từ khoá và dự đoán ngữ cảnh trước khi xem transcript.</p></div></aside><section class="min-w-0 rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-8"><div class="flex items-center justify-between gap-3"><div class="min-w-0"><p class="text-xs font-extrabold text-ink/45">PART {{ lesson.part }} · {{ lesson.source === 'live' ? 'KHO ĐÃ PUBLISH' : 'BẢN MẪU' }}</p><h2 class="mt-1 text-xl font-extrabold tracking-[-0.04em]">{{ lesson.title }}</h2></div><span class="shrink-0 rounded-lg bg-leaf/15 px-2 py-1 text-[11px] font-bold text-leaf">Cấp {{ lesson.level }}</span></div><div class="mt-6 rounded-2xl bg-azure p-5"><template v-if="lesson.mediaUrl"><audio :key="lesson.id" class="w-full" controls preload="metadata" :src="lesson.mediaUrl" @timeupdate="syncAudioProgress" /><p class="mt-3 text-xs leading-5 text-ink/55">Audio được phát từ asset đã publish. Đã nghe {{ sessionClock }} trong bài này.</p></template><template v-else><div class="flex items-center gap-4"><div class="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-ink/15 text-ink" aria-hidden="true"><AppIcon icon="solar:headphones-round-sound-bold" :size="27" /></div><div class="min-w-0 flex-1"><p class="text-xs font-extrabold text-ink/70">Audio chưa sẵn sàng</p><p class="mt-1 text-xs leading-5 text-ink/55">Admin cần upload, cho phép phát công khai và gắn file audio vào bài này trước khi có thể nghe.</p></div></div></template></div><button class="mt-4 text-xs font-bold text-iris hover:underline focus-ring" @click="transcriptVisible = !transcriptVisible">{{ transcriptVisible ? 'Ẩn transcript' : 'Xem transcript' }}</button><p v-if="transcriptVisible" class="mt-3 rounded-xl bg-mint p-3 text-xs leading-6 text-ink/65">{{ lesson.transcript }}</p><div class="mt-6 border-t border-line pt-5"><label class="text-xs font-bold" for="listen-answer">{{ mode === 'dictation' ? 'Chép lại điều bạn nghe được' : 'Bạn chọn đáp án nào?' }}</label><textarea id="listen-answer" v-model="answer" rows="3" class="mt-2 w-full rounded-xl border border-line bg-mint px-3 py-3 text-sm outline-none focus:border-iris" placeholder="Viết câu trả lời của bạn..." /><div class="mt-3 flex flex-wrap items-center justify-between gap-3"><span v-if="checked" class="text-xs font-bold" :class="notice.startsWith('Đã lưu') ? 'text-leaf' : 'text-ink/60'">{{ notice || 'Đối chiếu transcript để tự kiểm tra, rồi nghe thêm một lần.' }}</span><span v-else /> <AppButton :loading="saving" :disabled="!answer.trim() || !lesson.mediaUrl || playedSeconds < 1" @click="checkAnswer">{{ saving ? 'Đang lưu...' : 'Kiểm tra câu' }}</AppButton></div></div></section></div>
+    <section class="rounded-[26px] bg-ink p-6 text-white sm:p-9">
+      <div class="flex flex-wrap items-start justify-between gap-5">
+        <div class="min-w-0">
+          <p class="text-xs font-extrabold tracking-[0.18em] text-bean">LISTENING LAB</p>
+          <h1 class="mt-3 text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Nghe để bắt nhịp.</h1>
+          <p class="mt-3 max-w-xl text-sm leading-6 text-white/65">Chọn một bài trong kho đã publish, nghe kỹ một đoạn ngắn rồi đối chiếu transcript.</p>
+        </div>
+        <div class="rounded-2xl bg-white/10 px-4 py-3 text-right">
+          <p class="text-[11px] text-white/55">Bài trong kho</p>
+          <p class="mt-1 text-xl font-extrabold">{{ lessons.length }}</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-start">
+      <section class="min-w-0 rounded-[22px] border border-line p-5 sm:p-6">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div><p class="text-xs font-extrabold text-ink/45">DANH SÁCH BÀI NGHE</p><h2 class="mt-1 text-xl font-extrabold">{{ visible.length }} bài</h2></div>
+          <button class="rounded-xl border border-line px-3 py-2 text-xs font-extrabold hover:bg-mint focus-ring" :disabled="loading" @click="loadCatalog">{{ loading ? 'Đang tải…' : 'Làm mới' }}</button>
+        </div>
+
+        <div v-if="parts.length" class="mt-5 flex flex-wrap gap-2" role="group" aria-label="Lọc theo part">
+          <button :class="['filter-chip focus-ring', activePart === 'all' ? 'is-active' : '']" @click="activePart = 'all'">Tất cả</button>
+          <button v-for="part in parts" :key="part" :class="['filter-chip focus-ring', activePart === part ? 'is-active' : '']" @click="activePart = part">Part {{ part }}</button>
+        </div>
+
+        <div class="mt-5">
+          <LessonList
+            :lessons="visible"
+            :loading="loading"
+            tone="leaf"
+            icon="solar:headphones-round-sound-bold"
+            :href="(lesson) => `/listen/${lesson.slug}`"
+            :empty-title="failed ? 'Chưa tải được kho nghe' : 'Chưa có bài nghe nào được publish'"
+            :empty-detail="failed ? 'Kiểm tra kết nối tới API rồi tải lại danh sách.' : 'Admin publish bài nghe trong console là danh sách này có nội dung.'"
+          />
+        </div>
+      </section>
+
+      <aside class="space-y-4">
+        <section class="rounded-[22px] bg-mint p-5 sm:p-6">
+          <p class="text-xs font-extrabold text-[#46A900]">MẸO CỦA ĐẬU</p>
+          <h2 class="mt-2 text-lg font-extrabold">Nghe trước, đọc sau</h2>
+          <p class="mt-2 text-xs leading-5 text-ink/60">Nghe lần đầu không nhìn chữ. Ghi lại từ khoá và dự đoán ngữ cảnh, rồi mới mở transcript để đối chiếu.</p>
+        </section>
+        <section class="rounded-[22px] border border-line p-5 sm:p-6">
+          <p class="text-xs font-extrabold text-ink/45">TÌNH TRẠNG KHO</p>
+          <p class="mt-3 text-sm leading-6 text-ink/60"><span class="font-extrabold text-ink">{{ withAudio }}</span> / {{ lessons.length }} bài đã gắn file audio.</p>
+          <p class="mt-2 text-xs leading-5 text-ink/45">Bài chưa có audio vẫn mở được để đọc transcript; admin gắn asset ở màn Media là phát được ngay.</p>
+        </section>
+      </aside>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.filter-chip {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  padding: .55rem .9rem;
+  font-size: .72rem;
+  font-weight: 800;
+  color: rgba(38, 50, 56, .6);
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.filter-chip:hover { background: var(--mint); }
+.filter-chip.is-active { border-color: var(--iris); background: var(--iris); color: #fff; }
+</style>

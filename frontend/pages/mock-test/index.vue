@@ -1,33 +1,85 @@
 <script setup lang="ts">
-type JsonText = { text?: string };
 type CatalogTest = { id: string; slug: string; title: string; durationMin: number; questionCount: number };
-type ExamQuestion = { id: string; prompt: JsonText; options: Array<{ key: string; text: JsonText }> };
-type ExamSession = { sessionId: string; durationMin: number; questions: ExamQuestion[] };
-type ExamResult = { total: number; correct: number; wrong: number; unanswered: number; score: number };
+
 const { request, accessToken } = useAppApi();
-const started = ref(false); const submitted = ref(false); const current = ref(0); const answers = ref<Record<number, string>>({}); const seconds = ref(600); const loading = ref(false); const message = ref(''); const catalog = ref<CatalogTest[]>([]); const selectedTest = ref<CatalogTest | null>(null); const session = ref<ExamSession | null>(null); const result = ref<ExamResult | null>(null); let timer: ReturnType<typeof setInterval> | undefined;
-const fallbackQuestions = [{ id: 'demo-1', prompt: 'What is the woman mainly discussing?', options: [{ key: 'A', label: 'A new schedule' }, { key: 'B', label: 'A product return' }, { key: 'C', label: 'A team meeting' }, { key: 'D', label: 'A travel plan' }], answer: 'A' }, { id: 'demo-2', prompt: 'When will the report be ready?', options: [{ key: 'A', label: 'This afternoon' }, { key: 'B', label: 'Next Monday' }, { key: 'C', label: 'At the front desk' }, { key: 'D', label: 'With the client' }], answer: 'B' }, { id: 'demo-3', prompt: 'What should the listener do next?', options: [{ key: 'A', label: 'Send an email' }, { key: 'B', label: 'Check the invoice' }, { key: 'C', label: 'Book a room' }, { key: 'D', label: 'Call the manager' }], answer: 'A' }];
-const questions = computed(() => session.value ? session.value.questions.map((question) => ({ id: question.id, prompt: textOf(question.prompt), options: question.options.map((option) => ({ key: option.key, label: textOf(option.text) })), answer: '' })) : fallbackQuestions);
-const active = computed(() => questions.value[current.value]); const answered = computed(() => Object.keys(answers.value).length); const localScore = computed(() => questions.value.reduce((total, q, i) => total + (q.answer && answers.value[i] === q.answer ? 1 : 0), 0)); const clock = computed(() => `${String(Math.floor(seconds.value / 60)).padStart(2, '0')}:${String(seconds.value % 60).padStart(2, '0')}`);
-function textOf(value: JsonText) { return typeof value?.text === 'string' ? value.text : ''; }
-onMounted(async () => { try { catalog.value = await request<CatalogTest[]>('/mock-tests'); selectedTest.value = catalog.value[0] ?? null; } catch { message.value = 'Không tải được kho đề; bạn vẫn có thể làm bài mẫu offline.'; } });
-async function start() {
-  loading.value = true; message.value = '';
-  try {
-    if (selectedTest.value && accessToken.value) session.value = await request<ExamSession>('/exam-sessions', { method: 'POST', body: { testId: selectedTest.value.id, mode: 'practice' } });
-    else if (selectedTest.value && !accessToken.value) message.value = 'Bạn đang làm bản xem trước. Đăng nhập để lưu kết quả vào hồ sơ.';
-    seconds.value = (session.value?.durationMin ?? selectedTest.value?.durationMin ?? 10) * 60;
-    started.value = true;
-    timer = setInterval(() => { if (seconds.value > 0) seconds.value -= 1; else void submit(); }, 1000);
-  } catch { message.value = 'Không tạo được phiên thi. Hãy thử lại.'; }
+const tests = ref<CatalogTest[]>([]);
+const loading = ref(true);
+const failed = ref(false);
+
+const totalQuestions = computed(() => tests.value.reduce((total, test) => total + test.questionCount, 0));
+
+async function loadCatalog() {
+  loading.value = true;
+  try { tests.value = await request<CatalogTest[]>('/mock-tests'); }
+  catch { failed.value = true; }
   finally { loading.value = false; }
 }
-async function saveAnswer() { if (!session.value || !active.value) return; try { await request(`/exam-sessions/${session.value.sessionId}/answers`, { method: 'PATCH', body: { questionId: active.value.id, selectedAnswer: answers.value[current.value] } }); } catch { message.value = 'Câu trả lời chưa đồng bộ. Bạn vẫn có thể tiếp tục làm bài.'; } }
-async function submit() { if (timer) clearInterval(timer); loading.value = true; try { if (session.value) result.value = await request<ExamResult>(`/exam-sessions/${session.value.sessionId}/submit`, { method: 'POST' }); submitted.value = true; } catch { message.value = 'Chưa nộp được bài. Kiểm tra kết nối rồi thử lại.'; } finally { loading.value = false; } }
-function reset() { if (timer) clearInterval(timer); started.value = false; submitted.value = false; current.value = 0; answers.value = {}; session.value = null; result.value = null; seconds.value = 600; message.value = ''; }
-onUnmounted(() => { if (timer) clearInterval(timer); });
+
+onMounted(loadCatalog);
 </script>
 
 <template>
-  <div class="page-enter space-y-6"><section class="rounded-[26px] bg-ink p-6 text-white shadow-float sm:p-9"><div class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-xs font-extrabold tracking-[0.18em] text-bean">MOCK TEST</p><h1 class="mt-3 text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Một đề nhỏ, một bước tiến.</h1><p class="mt-3 max-w-xl text-sm leading-6 text-white/65">Chọn đề, làm bài đúng nhịp và lưu kết quả vào hồ sơ sau khi đăng nhập.</p></div><div v-if="started && !submitted" class="rounded-2xl bg-white/10 px-4 py-3 text-right"><p class="text-[11px] text-white/55">Còn lại</p><p class="mt-1 text-xl font-extrabold">{{ clock }}</p></div></div></section><section v-if="!started" class="mx-auto max-w-2xl rounded-[22px] border border-line bg-white p-6 text-center shadow-soft sm:p-10"><span class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-iris/10 text-iris"><AppIcon icon="solar:clipboard-list-bold" :size="30" /></span><h2 class="mt-5 text-2xl font-extrabold tracking-[-0.04em]">{{ selectedTest?.title || 'Mini test · Listening & Reading' }}</h2><p class="mx-auto mt-3 max-w-md text-sm leading-6 text-ink/55">{{ selectedTest ? `${selectedTest.questionCount} câu · ${selectedTest.durationMin} phút · kết quả sẽ được lưu khi bạn đăng nhập.` : 'Kho đề đang tải; bản câu hỏi mẫu vẫn sẵn sàng khi cần.' }}</p><AppSelect v-if="catalog.length > 1" v-model="selectedTest" class="mt-5 w-full max-w-xs text-left" aria-label="Chọn đề thi"><option v-for="test in catalog" :key="test.id" :value="test">{{ test.title }} · {{ test.durationMin }} phút</option></AppSelect><p v-if="message" class="mx-auto mt-4 max-w-md rounded-xl bg-bean/20 p-3 text-xs font-bold text-[#8B6400]">{{ message }}</p><AppButton class="mt-7" :loading="loading" @click="start">{{ loading ? 'Đang tạo phiên...' : 'Bắt đầu test' }}</AppButton></section><section v-else-if="!submitted" class="mx-auto max-w-3xl rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-8"><div class="flex items-center justify-between text-xs font-extrabold text-ink/45"><span>CÂU {{ current + 1 }} / {{ questions.length }}</span><span>{{ answered }} đã trả lời</span></div><h2 class="mt-7 text-2xl font-extrabold leading-tight tracking-[-0.04em]">{{ active.prompt }}</h2><div class="mt-7 space-y-3"><label v-for="option in active.options" :key="option.key" :class="['flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition', answers[current] === option.key ? 'border-iris bg-iris/5' : 'border-line hover:border-iris/40']"><input v-model="answers[current]" class="sr-only" type="radio" :name="`q-${current}`" :value="option.key" @change="saveAnswer"><span :class="['grid h-8 w-8 place-items-center rounded-lg text-xs font-extrabold', answers[current] === option.key ? 'bg-iris text-white' : 'bg-mint text-ink/60']">{{ option.key }}</span><span class="text-sm font-bold">{{ option.label }}</span></label></div><p v-if="message" class="mt-4 text-xs font-bold text-[#A87400]">{{ message }}</p><div class="mt-8 flex flex-wrap justify-between gap-3"><AppButton variant="secondary" :disabled="current === 0" @click="current -= 1">Câu trước</AppButton><AppButton v-if="current < questions.length - 1" @click="current += 1">Câu tiếp</AppButton><AppButton v-else variant="accent" :loading="loading" @click="submit">{{ loading ? 'Đang nộp...' : 'Nộp bài' }}</AppButton></div></section><section v-else class="mx-auto max-w-2xl rounded-[22px] border border-line bg-white p-6 text-center shadow-soft sm:p-10"><p class="text-xs font-extrabold tracking-[0.18em] text-iris">KẾT QUẢ</p><p class="mt-5 text-6xl font-extrabold tracking-[-0.08em] text-ink">{{ result?.correct ?? localScore }}<span class="text-2xl text-ink/30"> / {{ result?.total ?? questions.length }}</span></p><p class="mt-3 text-sm text-ink/55">{{ result ? `TOEIC quy đổi: ${result.score}. Sai ${result.wrong}, bỏ trống ${result.unanswered}.` : 'Bạn đã hoàn thành mini test. Đăng nhập để lưu kết quả và nhận điểm TOEIC quy đổi.' }}</p><AppButton class="mt-7" @click="reset">Làm lại</AppButton></section></div>
+  <div class="page-enter space-y-6">
+    <section class="rounded-[26px] bg-ink p-6 text-white sm:p-9">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="text-xs font-extrabold tracking-[0.18em] text-bean">MOCK TEST</p>
+          <h1 class="mt-3 text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Một đề nhỏ, một bước tiến.</h1>
+          <p class="mt-3 max-w-xl text-sm leading-6 text-white/65">Chọn một đề trong kho, làm ở chế độ luyện tập để xem đáp án ngay, hoặc thi thử để đo đúng nhịp thời gian.</p>
+        </div>
+        <div class="rounded-2xl bg-white/10 px-4 py-3 text-right">
+          <p class="text-[11px] text-white/55">Đề · câu hỏi</p>
+          <p class="mt-1 text-xl font-extrabold">{{ tests.length }} · {{ totalQuestions }}</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-start">
+      <section class="min-w-0 rounded-[22px] border border-line p-5 sm:p-6">
+        <div class="flex items-end justify-between gap-3">
+          <div><p class="text-xs font-extrabold text-ink/45">KHO ĐỀ</p><h2 class="mt-1 text-xl font-extrabold">{{ tests.length }} đề đã publish</h2></div>
+          <button class="rounded-xl border border-line px-3 py-2 text-xs font-extrabold hover:bg-mint focus-ring" :disabled="loading" @click="loadCatalog">{{ loading ? 'Đang tải…' : 'Làm mới' }}</button>
+        </div>
+
+        <ul v-if="tests.length" class="mt-5 space-y-2.5">
+          <li v-for="test in tests" :key="test.id" class="rounded-[18px] border border-line p-4 transition hover:border-iris/40 hover:bg-mint">
+            <div class="flex items-start gap-3.5">
+              <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-azure text-[#1288C8]"><AppIcon icon="solar:clipboard-list-bold" :size="20" /></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-extrabold">{{ test.title }}</p>
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                  <span class="rounded-lg bg-white px-2 py-0.5 text-[11px] font-bold text-ink/55">{{ test.questionCount }} câu</span>
+                  <span class="rounded-lg bg-white px-2 py-0.5 text-[11px] font-bold text-ink/55">{{ test.durationMin }} phút</span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3.5 flex flex-wrap gap-2">
+              <NuxtLink :to="`/mock-test/${test.id}/practice`" class="cta-grass inline-flex px-4 py-2.5 text-xs font-extrabold focus-ring">Luyện tập</NuxtLink>
+              <NuxtLink :to="`/mock-test/${test.id}/exam`" class="cta-sky inline-flex px-4 py-2.5 text-xs font-extrabold focus-ring">Thi thử</NuxtLink>
+            </div>
+          </li>
+        </ul>
+
+        <div v-else-if="loading" class="mt-5 rounded-2xl bg-mint p-6 text-sm text-ink/55">Đang tải kho đề…</div>
+
+        <div v-else class="mt-5 rounded-2xl bg-mint p-6">
+          <p class="text-sm font-extrabold">{{ failed ? 'Chưa tải được kho đề' : 'Chưa có đề nào được publish' }}</p>
+          <p class="mt-1.5 text-xs leading-5 text-ink/55">{{ failed ? 'Kiểm tra kết nối tới API rồi tải lại.' : 'Đề xuất hiện ở đây khi được publish trong hệ thống nội dung.' }}</p>
+        </div>
+      </section>
+
+      <aside class="space-y-4">
+        <section class="rounded-[22px] bg-mint p-5 sm:p-6">
+          <p class="text-xs font-extrabold text-[#46A900]">HAI CHẾ ĐỘ</p>
+          <p class="mt-3 text-xs leading-5 text-ink/65"><span class="font-extrabold">Luyện tập</span> — làm theo nhịp của bạn, tập trung vào việc hiểu vì sao sai.</p>
+          <p class="mt-2 text-xs leading-5 text-ink/65"><span class="font-extrabold">Thi thử</span> — chạy đúng thời gian quy định để làm quen áp lực phòng thi.</p>
+        </section>
+        <section v-if="!accessToken" class="rounded-[22px] border border-line p-5 sm:p-6">
+          <p class="text-xs font-extrabold text-ink/45">LƯU KẾT QUẢ</p>
+          <p class="mt-2 text-xs leading-5 text-ink/55">Đăng nhập trước khi làm để điểm và câu sai được ghi vào hồ sơ học của bạn.</p>
+          <NuxtLink to="/account" class="cta-sky mt-4 inline-flex px-4 py-2.5 text-xs font-extrabold focus-ring">Đăng nhập</NuxtLink>
+        </section>
+      </aside>
+    </div>
+  </div>
 </template>

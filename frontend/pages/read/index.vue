@@ -1,31 +1,103 @@
 <script setup lang="ts">
-const { request, accessToken } = useAppApi();
-const selected = ref('B');
-const checked = ref(false);
-const loading = ref(false);
-const message = ref('');
-type PracticeQuestion = { id: string; prompt: Record<string, unknown>; options: Array<{ key: string; text: Record<string, unknown> }> };
-const question = ref({ id: '', prompt: 'The marketing team will present the new campaign ____ Monday morning.', options: [{ key: 'A', label: 'at' }, { key: 'B', label: 'on' }, { key: 'C', label: 'in' }, { key: 'D', label: 'by' }], answer: 'B' });
+import type { CatalogItem, LessonSummary } from '~/utils/catalog';
+import { toLessonSummary } from '~/utils/catalog';
 
-function textOf(value: Record<string, unknown>) { return typeof value.text === 'string' ? value.text : ''; }
-onMounted(async () => {
+const { request } = useAppApi();
+const grammar = ref<LessonSummary[]>([]);
+const reading = ref<LessonSummary[]>([]);
+const loading = ref(true);
+const failed = ref(false);
+const tab = ref<'grammar' | 'reading'>('grammar');
+
+const tabs = [
+  { key: 'grammar' as const, label: 'Ngữ pháp', detail: 'Part 5 · từng điểm ngữ pháp' },
+  { key: 'reading' as const, label: 'Bài đọc', detail: 'Part 6–7 · đoạn văn và câu hỏi' }
+];
+
+const visible = computed(() => tab.value === 'grammar' ? grammar.value : reading.value);
+
+async function loadCatalog() {
+  loading.value = true;
   try {
-    const [remote] = await request<PracticeQuestion[]>('/practice/questions', { query: { kind: 'GRAMMAR', part: 5, limit: 1 } });
-    if (remote) question.value = { id: remote.id, prompt: textOf(remote.prompt), options: remote.options.map((option) => ({ key: option.key, label: textOf(option.text) })), answer: '' };
-  } catch { /* The fallback card remains usable offline. */ }
-});
-
-async function checkAnswer() {
-  if (checked.value) { checked.value = false; message.value = ''; return; }
-  checked.value = true;
-  message.value = question.value.answer && selected.value === question.value.answer ? 'Chính xác — “on Monday” là cụm chỉ ngày.' : question.value.answer ? 'Chưa đúng. Hãy nhớ: on + ngày trong tuần.' : 'Đáp án đang được chấm bởi server.';
-  if (accessToken.value && question.value.id) {
-    loading.value = true;
-    try { const result = await request<{ isCorrect: boolean }>('/learning/attempts', { method: 'POST', body: { questionId: question.value.id, context: 'PRACTICE', selectedAnswer: selected.value } }); message.value = result.isCorrect ? 'Chính xác — tiến bộ của bạn đã được lưu.' : 'Chưa đúng. Hãy xem giải thích và thử thêm một câu nữa.'; } catch { message.value += ' Phiên đồng bộ sẽ thử lại sau.'; } finally { loading.value = false; }
-  }
+    const [grammarItems, readingItems] = await Promise.all([
+      request<CatalogItem[]>('/content', { query: { type: 'GRAMMAR' } }),
+      request<CatalogItem[]>('/content', { query: { type: 'READING' } })
+    ]);
+    grammar.value = grammarItems.map(toLessonSummary);
+    reading.value = readingItems.map(toLessonSummary);
+  } catch { failed.value = true; }
+  finally { loading.value = false; }
 }
+
+onMounted(loadCatalog);
 </script>
 
 <template>
-  <div class="page-enter space-y-6"><section class="rounded-[26px] bg-azure p-6 shadow-soft sm:p-9"><p class="text-xs font-extrabold tracking-[0.18em] text-iris">READING LAB · GRAMMAR</p><div class="mt-3 flex flex-wrap items-end justify-between gap-4"><div><h1 class="text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Đọc nhanh, hiểu sâu.</h1><p class="mt-3 max-w-xl text-sm leading-6 text-ink/60">Một câu hỏi, một điểm ngữ pháp, một lần giải thích đủ rõ để lần sau nhận ra ngay.</p></div><span class="rounded-xl bg-white/70 px-3 py-2 text-xs font-extrabold text-ink/60">Grammar · Cơ bản</span></div></section><section class="mx-auto max-w-3xl rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-8"><div class="flex items-center justify-between"><span class="text-xs font-extrabold text-ink/45">CÂU 01 / 10</span><span class="text-xs font-bold text-ink/45">Reading · 2 phút</span></div><h2 class="mt-7 text-2xl font-extrabold leading-tight tracking-[-0.04em]">{{ question.prompt }}</h2><div class="mt-7 grid gap-3 sm:grid-cols-2"><label v-for="option in question.options" :key="option.key" :class="['flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition', selected === option.key ? 'border-iris bg-iris/5' : 'border-line hover:border-iris/40']"><input v-model="selected" class="sr-only" type="radio" name="reading-answer" :value="option.key" @change="checked = false"><span :class="['grid h-8 w-8 place-items-center rounded-lg text-xs font-extrabold', selected === option.key ? 'bg-iris text-white' : 'bg-mint text-ink/60']">{{ option.key }}</span><span class="text-sm font-bold">{{ option.label }}</span></label></div><div v-if="checked" :class="['mt-6 rounded-2xl p-4 text-sm leading-6', message.startsWith('Chính xác') ? 'bg-leaf/10 text-ink' : 'bg-bean/15 text-ink']"><p class="font-extrabold">{{ message }}</p><p class="mt-1 text-xs text-ink/60">Giải thích: ngày cụ thể đi với giới từ “on”.</p></div><div class="mt-7 flex justify-end"><AppButton :loading="loading" @click="checkAnswer">{{ loading ? 'Đang lưu...' : checked ? 'Làm lại câu' : 'Kiểm tra đáp án' }}</AppButton></div></section></div>
+  <div class="page-enter space-y-6">
+    <section class="rounded-[26px] bg-azure p-6 sm:p-9">
+      <p class="text-xs font-extrabold tracking-[0.18em] text-iris">READING LAB</p>
+      <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Đọc nhanh, hiểu sâu.</h1>
+          <p class="mt-3 max-w-xl text-sm leading-6 text-ink/60">Chọn một điểm ngữ pháp hoặc một bài đọc, làm hết câu hỏi của bài rồi xem giải thích.</p>
+        </div>
+        <span class="rounded-xl bg-white/70 px-3 py-2 text-xs font-extrabold text-ink/60">{{ grammar.length + reading.length }} bài đã publish</span>
+      </div>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-[1.3fr_.7fr] lg:items-start">
+      <section class="min-w-0 rounded-[22px] border border-line p-5 sm:p-6">
+        <div class="flex flex-wrap gap-2" role="tablist" aria-label="Nhóm nội dung đọc">
+          <button v-for="item in tabs" :key="item.key" :class="['group-tab focus-ring', tab === item.key ? 'is-active' : '']" role="tab" :aria-selected="tab === item.key" @click="tab = item.key">
+            <span class="block text-xs font-extrabold">{{ item.label }}</span>
+            <span class="mt-0.5 block text-[11px] opacity-70">{{ item.detail }}</span>
+          </button>
+        </div>
+
+        <div class="mt-6 flex items-end justify-between gap-3">
+          <h2 class="text-xl font-extrabold">{{ visible.length }} bài</h2>
+          <button class="rounded-xl border border-line px-3 py-2 text-xs font-extrabold hover:bg-mint focus-ring" :disabled="loading" @click="loadCatalog">{{ loading ? 'Đang tải…' : 'Làm mới' }}</button>
+        </div>
+
+        <div class="mt-4">
+          <LessonList
+            :lessons="visible"
+            :loading="loading"
+            tone="iris"
+            icon="solar:book-2-bold"
+            :href="(lesson) => `/read/${lesson.slug}`"
+            :empty-title="failed ? 'Chưa tải được kho đọc' : 'Nhóm này chưa có bài nào'"
+            :empty-detail="failed ? 'Kiểm tra kết nối tới API rồi tải lại danh sách.' : 'Admin publish bài trong console là danh sách này có nội dung.'"
+          />
+        </div>
+      </section>
+
+      <aside class="space-y-4">
+        <section class="rounded-[22px] bg-mint p-5 sm:p-6">
+          <p class="text-xs font-extrabold text-[#46A900]">CÁCH DÙNG</p>
+          <h2 class="mt-2 text-lg font-extrabold">Một bài, một điểm ngữ pháp</h2>
+          <p class="mt-2 text-xs leading-5 text-ink/60">Mỗi bài gom các câu hỏi cùng một điểm kiến thức. Làm hết bài rồi mới sang bài khác sẽ nhớ lâu hơn là làm rải rác.</p>
+        </section>
+        <section class="rounded-[22px] border border-line p-5 sm:p-6">
+          <p class="text-xs font-extrabold text-ink/45">CHẤM ĐIỂM</p>
+          <p class="mt-3 text-xs leading-5 text-ink/55">Đáp án được chấm ở server, không nằm trong dữ liệu gửi về trình duyệt. Khi bạn đăng nhập, mỗi câu trả lời đều được lưu vào tiến độ.</p>
+        </section>
+      </aside>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.group-tab {
+  flex: 1 1 12rem;
+  border-radius: 16px;
+  corner-shape: squircle;
+  border: 1px solid var(--line);
+  padding: .75rem 1rem;
+  text-align: left;
+  color: rgba(38, 50, 56, .65);
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.group-tab:hover { background: var(--mint); }
+.group-tab.is-active { border-color: var(--iris); background: var(--iris); color: #fff; }
+</style>
