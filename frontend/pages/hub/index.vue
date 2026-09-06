@@ -230,26 +230,26 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
         <template v-else-if="activeTab === 'profile'">
           <div class="border-b border-line pb-5"><p class="text-xs font-bold text-leaf">HỒ SƠ</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Thông tin cá nhân</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Tên hiển thị của bạn xuất hiện trong cộng đồng, bảng xếp hạng và lịch sử học.</p></div>
           <form class="mt-6 max-w-xl space-y-5" @submit.prevent="updateProfile">
-            <div><label for="hub-display-name" class="text-xs font-extrabold text-ink/55">Tên hiển thị</label><input id="hub-display-name" v-model="displayName" class="mt-2 w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm outline-none transition focus:border-iris" maxlength="120" autocomplete="name"></div>
+            <AppInput id="hub-display-name" v-model="displayName" label="Tên hiển thị" maxlength="120" autocomplete="name" />
             <div><p class="text-xs font-extrabold text-ink/55">Email</p><p class="mt-2 rounded-xl bg-paper px-4 py-3 text-sm text-ink/60">{{ user?.email }} <span class="ml-2 text-xs text-ink/35">Chỉ đọc</span></p></div>
             <div class="grid gap-3 sm:grid-cols-2"><div class="rounded-2xl bg-[#E7F7F1] p-4"><p class="text-[11px] font-bold text-leaf">THÀNH VIÊN TỪ</p><p class="mt-2 text-sm font-extrabold">{{ memberSince }}</p></div><div class="rounded-2xl bg-[#FFF6DF] p-4"><p class="text-[11px] font-bold text-[#A87400]">ĐIỂM GẦN NHẤT</p><p class="mt-2 text-sm font-extrabold">{{ dashboard?.metrics.lastExam?.score ?? 'Chưa có' }}</p></div></div>
-            <button class="rounded-xl bg-ink px-5 py-3 text-xs font-extrabold text-white transition hover:bg-iris disabled:opacity-40 focus-ring" :disabled="busy">{{ busy ? 'Đang lưu…' : 'Lưu thay đổi' }}</button>
+            <AppButton type="submit" :loading="busy">{{ busy ? 'Đang lưu…' : 'Lưu thay đổi' }}</AppButton>
           </form>
         </template>
 
         <template v-else-if="activeTab === 'password'">
           <div class="border-b border-line pb-5"><p class="text-xs font-bold text-leaf">BẢO MẬT</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Đổi mật khẩu</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Sau khi đổi, các phiên đăng nhập khác sẽ bị thu hồi để bảo vệ tài khoản.</p></div>
-          <form class="mt-6 max-w-xl space-y-4" @submit.prevent="updatePassword"><div><label for="current-password" class="text-xs font-extrabold text-ink/55">Mật khẩu hiện tại</label><input id="current-password" v-model="currentPassword" type="password" class="mt-2 w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm outline-none focus:border-iris" autocomplete="current-password"></div><div><label for="new-password" class="text-xs font-extrabold text-ink/55">Mật khẩu mới</label><input id="new-password" v-model="newPassword" type="password" class="mt-2 w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm outline-none focus:border-iris" minlength="8" autocomplete="new-password"></div><div><label for="confirm-password" class="text-xs font-extrabold text-ink/55">Nhập lại mật khẩu mới</label><input id="confirm-password" v-model="confirmPassword" type="password" class="mt-2 w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm outline-none focus:border-iris" minlength="8" autocomplete="new-password"></div><button class="mt-2 rounded-xl bg-ink px-5 py-3 text-xs font-extrabold text-white hover:bg-iris disabled:opacity-40 focus-ring" :disabled="busy">{{ busy ? 'Đang cập nhật…' : 'Đổi mật khẩu' }}</button></form>
+          <form class="mt-6 max-w-xl space-y-4" @submit.prevent="updatePassword"><AppInput id="current-password" v-model="currentPassword" label="Mật khẩu hiện tại" type="password" autocomplete="current-password" /><AppInput id="new-password" v-model="newPassword" label="Mật khẩu mới" type="password" minlength="8" autocomplete="new-password" /><AppInput id="confirm-password" v-model="confirmPassword" label="Nhập lại mật khẩu mới" type="password" minlength="8" autocomplete="new-password" /><AppButton class="mt-2" type="submit" :loading="busy">{{ busy ? 'Đang cập nhật…' : 'Đổi mật khẩu' }}</AppButton></form>
         </template>
 
         <template v-else-if="activeTab === 'devices'">
           <div class="border-b border-line pb-5"><p class="text-xs font-bold text-leaf">TRUY CẬP</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Thiết bị đã đăng nhập</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Bạn có thể gỡ một thiết bị không còn sử dụng. Giới hạn tham chiếu: tối đa 3 thiết bị.</p></div>
-          <div v-if="devices.length" class="mt-6 divide-y divide-line"> <div v-for="device in devices" :key="device.id" class="flex flex-wrap items-center justify-between gap-4 py-4 first:pt-0"><div class="flex items-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-2xl bg-paper text-lg text-iris">▣</span><div><p class="text-sm font-extrabold">{{ deviceLabel(device) }}</p><p class="mt-1 text-xs text-ink/45">{{ device.type }} · hoạt động {{ formatDate(device.lastSeenAt) }}</p></div></div><button class="rounded-xl border border-line px-3 py-2 text-xs font-extrabold text-ink/60 hover:border-iris hover:text-iris focus-ring" :disabled="busy" @click="removeDevice(device)">Gỡ thiết bị</button></div></div>
+          <div v-if="devices.length" class="mt-6 divide-y divide-line"> <div v-for="device in devices" :key="device.id" class="flex flex-wrap items-center justify-between gap-4 py-4 first:pt-0"><div class="flex items-center gap-3"><span class="grid h-11 w-11 place-items-center rounded-2xl bg-paper text-lg text-iris">▣</span><div><p class="text-sm font-extrabold">{{ deviceLabel(device) }}</p><p class="mt-1 text-xs text-ink/45">{{ device.type }} · hoạt động {{ formatDate(device.lastSeenAt) }}</p></div></div><AppButton variant="secondary" size="sm" :disabled="busy" @click="removeDevice(device)">Gỡ thiết bị</AppButton></div></div>
           <div v-else class="mt-6 rounded-2xl bg-paper p-5 text-sm text-ink/55">Chưa có thiết bị nào được ghi nhận trong phiên này.</div>
         </template>
 
         <template v-else-if="activeTab === 'notifications'">
-          <div class="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-5"><div><p class="text-xs font-bold text-leaf">NHẮC NHỞ</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Thông báo</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Chọn nhịp nhắc giúp bạn quay lại học mà không bị làm phiền.</p></div><button class="rounded-xl border border-line px-3 py-2 text-xs font-extrabold hover:bg-paper disabled:opacity-40 focus-ring" :disabled="!unreadCount || busy" @click="markNotificationsRead">Đã đọc tất cả</button></div>
+          <div class="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-5"><div><p class="text-xs font-bold text-leaf">NHẮC NHỞ</p><h2 class="mt-2 text-2xl font-extrabold tracking-[-0.05em]">Thông báo</h2><p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Chọn nhịp nhắc giúp bạn quay lại học mà không bị làm phiền.</p></div><AppButton variant="secondary" size="sm" :disabled="!unreadCount || busy" @click="markNotificationsRead">Đã đọc tất cả</AppButton></div>
           <div class="mt-6 grid gap-3 sm:grid-cols-2"><label v-for="item in [{ key: 'vocabulary', label: 'Ôn từ vựng', detail: 'Nhắc khi thẻ SRS đến hạn' }, { key: 'streak', label: 'Giữ streak', detail: 'Nhắc khi hôm nay chưa học' }, { key: 'goals', label: 'Mục tiêu ngày', detail: 'Tóm tắt tiến độ trong ngày' }, { key: 'community', label: 'Cộng đồng', detail: 'Phản hồi và hoạt động liên quan' }]" :key="item.key" class="flex cursor-pointer items-start gap-3 rounded-2xl bg-paper p-4"><input v-model="notificationPrefs[item.key as keyof typeof notificationPrefs]" type="checkbox" class="mt-1 h-4 w-4 accent-iris"><span><span class="block text-sm font-extrabold">{{ item.label }}</span><span class="mt-1 block text-xs leading-5 text-ink/50">{{ item.detail }}</span></span></label></div>
           <div class="mt-8"><div class="flex items-center justify-between gap-3"><h3 class="text-sm font-extrabold">Gần đây</h3><span class="text-xs text-ink/40">{{ unreadCount }} chưa đọc</span></div><div v-if="notifications.length" class="mt-3 divide-y divide-line"> <div v-for="item in notifications" :key="item.id" class="py-3"><p class="text-sm font-extrabold" :class="item.readAt ? 'text-ink/60' : 'text-ink'">{{ item.title }}</p><p class="mt-1 text-xs leading-5 text-ink/50">{{ item.body }}</p><p class="mt-1 text-[11px] text-ink/35">{{ formatDate(item.createdAt) }}</p></div></div><p v-else class="mt-3 rounded-2xl bg-paper p-5 text-xs leading-5 text-ink/55">Chưa có thông báo mới. Khi có hoạt động đáng chú ý, chúng sẽ xuất hiện ở đây.</p></div>
         </template>
@@ -306,6 +306,17 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 .hub-hero :is(.text-white\/45, .text-white\/60) { color: rgba(38, 50, 56, .62) !important; }
 .hub-hero .text-leaf { color: #46a900 !important; }
 .hub-hero .border-white\/10 { border-color: rgba(38, 50, 56, .1) !important; }
+
+.hub-page > .hub-hero {
+  min-height: auto;
+  padding: .25rem 0 1.1rem !important;
+  border-bottom: 1px solid #dcecdf !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.hub-page > .hub-hero > .absolute { display: none !important; }
+.hub-page > .hub-hero h1 { font-size: clamp(1.8rem, 4vw, 2.5rem) !important; }
+.hub-page > .hub-hero::after { display: none; }
 
 .hub-hero::after {
   position: absolute;

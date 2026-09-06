@@ -8,6 +8,7 @@
   --paper: #ffffff;
   --chalk: #ffffff;
   --line: #e3e7f0;
+  --surface-muted: #f5f6f7;
   font-family: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
   color: var(--ink);
   background: var(--paper);
@@ -31,5 +32,25 @@ input:not([type='checkbox']):not([type='radio']), textarea, select {
 }
 
 .page-enter { animation: page-enter .55s cubic-bezier(.22, 1, .36, 1) both; }
+
+/* Shared learning-workspace rhythm: compact page intro, quieter surfaces, direct access to the task. */
+.page-enter > section:first-child {
+  min-height: auto !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ink) !important;
+  padding: .25rem 0 1.35rem !important;
+}
+.page-enter > section:first-child > .absolute { display: none !important; }
+.page-enter > section:first-child .relative { gap: 1.25rem !important; }
+.page-enter > section:first-child h1 { margin-top: .45rem !important; font-size: clamp(1.9rem, 4vw, 3rem) !important; line-height: 1.05 !important; }
+.page-enter > section:first-child :is(.text-white, .text-white\/65, .text-white\/55) { color: rgba(23, 33, 63, .62) !important; }
+.page-enter > section:first-child :is(.bg-white\/10, .bg-white\/15) { background: var(--surface-muted) !important; color: var(--ink) !important; }
+.page-enter :is(.shadow-soft, .shadow-float) { box-shadow: none !important; }
+.page-enter :is([class*="rounded-[22px]"], [class*="rounded-[26px]"]) { border-radius: 18px !important; }
+
 @keyframes page-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; } }
