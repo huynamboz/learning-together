@@ -3,6 +3,8 @@ defineEmits<{ toggleChat: [] }>();
 
 const route = useRoute();
 const notificationOpen = ref(false);
+// Staff get a way into the console where a learner is offered an upgrade.
+const { isAdmin, initial, signedIn, ensureSession } = useSession();
 
 /** One hue per study area, so the nav reads by colour before it reads by word. */
 const navItems = [
@@ -20,6 +22,8 @@ const navItems = [
 function isActive(path: string) {
   return route.path === path || route.path.startsWith(`${path}/`);
 }
+
+onMounted(ensureSession);
 </script>
 
 <template>
@@ -43,7 +47,18 @@ function isActive(path: string) {
       </nav>
 
       <div class="ml-auto flex items-center gap-1.5">
-        <NuxtLink to="/upgrade" class="hidden rounded-xl bg-ink px-4 py-2.5 text-xs font-bold text-white shadow-soft transition hover:-translate-y-0.5 hover:bg-iris focus-ring sm:block">Nâng cấp</NuxtLink>
+        <NuxtLink
+          v-if="isAdmin"
+          to="/admin"
+          class="hidden items-center gap-1.5 rounded-xl bg-ink px-4 py-2.5 text-xs font-bold text-white shadow-soft transition hover:-translate-y-0.5 hover:bg-iris focus-ring sm:inline-flex"
+        >
+          <AppIcon icon="solar:chart-2-bold" :size="15" /> Admin
+        </NuxtLink>
+        <NuxtLink
+          v-else
+          to="/upgrade"
+          class="hidden rounded-xl bg-ink px-4 py-2.5 text-xs font-bold text-white shadow-soft transition hover:-translate-y-0.5 hover:bg-iris focus-ring sm:block"
+        >Nâng cấp</NuxtLink>
         <span class="hidden rounded-xl bg-white px-2.5 py-2 text-xs font-bold text-ink/70 sm:block">◷ 13m</span>
         <span class="hidden rounded-xl bg-sun px-2.5 py-2 text-xs font-bold text-[#9A6A00] sm:block">♨ 1</span>
         <div class="relative">
@@ -55,11 +70,21 @@ function isActive(path: string) {
             <NuxtLink to="/hub?tab=notifications" class="mt-3 inline-flex text-xs font-bold text-iris hover:underline focus-ring" @click="notificationOpen = false">Mở thông báo →</NuxtLink>
           </div>
         </div>
-        <NuxtLink to="/hub?tab=profile" class="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-iris font-bold text-white shadow-soft focus-ring" aria-label="Mở hồ sơ">N</NuxtLink>
+        <NuxtLink to="/hub?tab=profile" class="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-iris font-bold text-white shadow-soft focus-ring" :aria-label="signedIn ? 'Mở hồ sơ' : 'Đăng nhập'">{{ initial }}</NuxtLink>
       </div>
     </div>
 
     <div class="nav-strip flex gap-1 overflow-x-auto border-t border-line/50 px-4 py-2 xl:hidden">
+      <!-- The header CTA is hidden on small screens, so staff need the way in here too. -->
+      <NuxtLink
+        v-if="isAdmin"
+        to="/admin"
+        :class="['nav-item is-compact focus-ring', route.path.startsWith('/admin') ? 'is-active' : '']"
+        style="--nav-color: #263238"
+        :aria-current="route.path.startsWith('/admin') ? 'page' : undefined"
+      >
+        <span class="nav-icon"><AppIcon icon="solar:chart-2-bold" :size="16" /></span> Admin
+      </NuxtLink>
       <NuxtLink
         v-for="item in navItems"
         :key="item.to"
