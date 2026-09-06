@@ -19,6 +19,9 @@ export class LearningController {
   @Get('progress')
   getProgress(@Req() request: AuthenticatedRequest) { return this.service.progress(request.user!.id); }
 
+  @Get('surface-progress')
+  surfaceProgress(@Req() request: AuthenticatedRequest) { return this.service.surfaceProgress(request.user!.id); }
+
   @Get('dashboard')
   dashboardSnapshot(@Req() request: AuthenticatedRequest) { return this.dashboard.snapshot(request.user!.id); }
 }

@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ContentType, WritingStatus } from '@prisma/client';
 import { PrismaService } from '@/database/prisma.service';
 import { isAnswerCorrect } from './answer-evaluator';
 import { RecordAttemptDto, RecordStudySessionDto } from './learning.dto';
+import type { SurfaceProgress } from './surface-progress';
 
 @Injectable()
 export class LearningService {
@@ -26,6 +28,37 @@ export class LearningService {
       this.prisma.questionAttempt.count({ where: { userId, isCorrect: false } })
     ]);
     return { total: aggregate, correct, wrong, accuracy: aggregate ? Math.round((correct / aggregate) * 100) : 0 };
+  }
+
+  /**
+   * Lifetime totals per surface. Counting through the question's content type rather than the
+   * attempt's own context is what separates Listening from Reading — both are recorded as
+   * PRACTICE, so the context alone cannot tell them apart.
+   */
+  async surfaceProgress(userId: string): Promise<SurfaceProgress> {
+    const answered = (type: ContentType) => this.prisma.questionAttempt.count({ where: { userId, question: { contentItem: { type } } } });
+    const [listeningAnswered, readingAnswered, grammarAnswered, vocabularyReviewed, writingSubmitted, writingGraded, videoStudy, exams] = await this.prisma.$transaction([
+      answered(ContentType.LISTENING),
+      answered(ContentType.READING),
+      answered(ContentType.GRAMMAR),
+      this.prisma.srsCard.count({ where: { userId, lastReviewedAt: { not: null } } }),
+      this.prisma.writingSubmission.count({ where: { userId, status: { in: [WritingStatus.SUBMITTED, WritingStatus.GRADING, WritingStatus.GRADED] } } }),
+      this.prisma.writingSubmission.count({ where: { userId, status: WritingStatus.GRADED } }),
+      this.prisma.studySession.aggregate({ where: { userId, surface: 'video' }, _sum: { durationSeconds: true } }),
+      this.prisma.examResult.findMany({ where: { session: { userId } }, select: { score: true } })
+    ]);
+
+    return {
+      listeningAnswered,
+      readingAnswered,
+      grammarAnswered,
+      vocabularyReviewed,
+      writingSubmitted,
+      writingGraded,
+      videoSeconds: videoStudy._sum.durationSeconds ?? 0,
+      examsCompleted: exams.length,
+      bestExamScore: exams.length ? Math.max(...exams.map((exam) => exam.score ?? 0)) : null
+    };
   }
 
   async recordStudySession(userId: string, dto: RecordStudySessionDto) {

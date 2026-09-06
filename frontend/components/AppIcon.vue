@@ -32,9 +32,33 @@ import solarTarget from '@iconify-icons/solar/target-bold';
 import solarUpload from '@iconify-icons/solar/upload-minimalistic-bold';
 import solarUser from '@iconify-icons/solar/user-circle-bold-duotone';
 import solarUsersGroup from '@iconify-icons/solar/users-group-rounded-bold';
+import solarAltArrowDown from '@iconify-icons/solar/alt-arrow-down-linear';
+import solarAltArrowLeft from '@iconify-icons/solar/alt-arrow-left-linear';
+import solarAltArrowRight from '@iconify-icons/solar/alt-arrow-right-linear';
+import solarCheckRead from '@iconify-icons/solar/check-read-bold';
+import solarCompass from '@iconify-icons/solar/compass-bold';
+import solarCpuBolt from '@iconify-icons/solar/cpu-bolt-bold';
+import solarDangerTriangle from '@iconify-icons/solar/danger-triangle-bold';
+import solarDiploma from '@iconify-icons/solar/diploma-verified-bold';
+import solarHourglass from '@iconify-icons/solar/hourglass-bold';
+import solarInfoCircle from '@iconify-icons/solar/info-circle-bold';
+import solarLinkCircle from '@iconify-icons/solar/link-circle-bold';
+import solarLockKeyhole from '@iconify-icons/solar/lock-keyhole-bold';
+import solarMapPointWave from '@iconify-icons/solar/map-point-wave-bold';
+import solarMicrophone from '@iconify-icons/solar/microphone-large-bold';
+import solarMonitorSmartphone from '@iconify-icons/solar/monitor-smartphone-bold';
+import solarRoute from '@iconify-icons/solar/route-bold';
+import solarSoundwave from '@iconify-icons/solar/soundwave-square-bold';
+import solarTextSquare from '@iconify-icons/solar/text-square-bold';
+import solarTrashBin from '@iconify-icons/solar/trash-bin-trash-bold';
 import tablerDevices from '@iconify-icons/tabler/devices';
 import tablerMessages from '@iconify-icons/tabler/messages';
 
+/**
+ * Every icon the app draws is imported here. An unmapped name falls through to Iconify's remote
+ * API, which renders nothing offline and costs a request per icon — so a missing entry looks like
+ * a blank space rather than an error.
+ */
 const iconMap: Record<string, IconifyIcon> = {
   'solar:arrow-left-linear': solarArrowLeft,
   'solar:arrow-right-linear': solarArrowRight,
@@ -67,6 +91,25 @@ const iconMap: Record<string, IconifyIcon> = {
   'solar:upload-minimalistic-bold': solarUpload,
   'solar:user-circle-bold-duotone': solarUser,
   'solar:users-group-rounded-bold': solarUsersGroup,
+  'solar:alt-arrow-down-linear': solarAltArrowDown,
+  'solar:alt-arrow-left-linear': solarAltArrowLeft,
+  'solar:alt-arrow-right-linear': solarAltArrowRight,
+  'solar:check-read-bold': solarCheckRead,
+  'solar:compass-bold': solarCompass,
+  'solar:cpu-bolt-bold': solarCpuBolt,
+  'solar:danger-triangle-bold': solarDangerTriangle,
+  'solar:diploma-verified-bold': solarDiploma,
+  'solar:hourglass-bold': solarHourglass,
+  'solar:info-circle-bold': solarInfoCircle,
+  'solar:link-circle-bold': solarLinkCircle,
+  'solar:lock-keyhole-bold': solarLockKeyhole,
+  'solar:map-point-wave-bold': solarMapPointWave,
+  'solar:microphone-large-bold': solarMicrophone,
+  'solar:monitor-smartphone-bold': solarMonitorSmartphone,
+  'solar:route-bold': solarRoute,
+  'solar:soundwave-square-bold': solarSoundwave,
+  'solar:text-square-bold': solarTextSquare,
+  'solar:trash-bin-trash-bold': solarTrashBin,
   'tabler:devices': tablerDevices,
   'tabler:messages': tablerMessages
 };

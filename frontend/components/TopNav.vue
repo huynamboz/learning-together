@@ -14,7 +14,7 @@ const navItems = [
   { label: 'Từ vựng', icon: 'solar:book-bookmark-bold', to: '/vocabulary', color: '#EFA400' },
   { label: 'Đề thi', icon: 'solar:clipboard-list-bold', to: '/mock-test', color: '#EF6C57' },
   { label: 'Video', icon: 'solar:play-circle-bold', to: '/video', color: '#8A63D2' },
-  { label: 'Cộng đồng', icon: 'tabler:messages', to: '/hoi-dap', color: '#E5599A' },
+  { label: 'Lộ trình', icon: 'solar:route-bold', to: '/lo-trinh', color: '#E5599A' },
   { label: 'Leaderboard', icon: 'solar:cup-star-bold', to: '/leaderboard', color: '#C08A12' }
 ];
 
