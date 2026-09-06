@@ -65,7 +65,7 @@ onMounted(loadCatalog);
 
       <aside class="space-y-4">
         <section class="rounded-[22px] bg-mint p-5 sm:p-6">
-          <p class="text-xs font-extrabold text-[#46A900]">MẸO CỦA ĐẬU</p>
+          <p class="text-xs font-extrabold text-[#46A900]">MẸO CỦA MS CHOLE</p>
           <h2 class="mt-2 text-lg font-extrabold">Nghe trước, đọc sau</h2>
           <p class="mt-2 text-xs leading-5 text-ink/60">Nghe lần đầu không nhìn chữ. Ghi lại từ khoá và dự đoán ngữ cảnh, rồi mới mở transcript để đối chiếu.</p>
         </section>

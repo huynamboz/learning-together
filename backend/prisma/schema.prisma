@@ -111,6 +111,13 @@ enum QuestionGroupType {
   PASSAGE_SET
 }
 
+/// Whether a paper may be published at all: restricted material stays internal.
+enum ContentLicense {
+  ORIGINAL
+  LICENSED
+  RESTRICTED
+}
+
 /// Where a scaled score came from, so the UI never presents an estimate as an official number.
 enum ScoreSource {
   OFFICIAL_TABLE
@@ -615,6 +622,10 @@ model MockTest {
   /// Total time. A sectioned test derives this from its sections; kept for legacy flat tests.
   durationMin Int
   status      ContentStatus      @default(DRAFT)
+  /// Where the paper came from, e.g. "ETS official sample form ST-05" or "biên soạn nội bộ".
+  source      String?            @db.VarChar(255)
+  /// RESTRICTED papers cannot be published; they stay available to staff only.
+  license     ContentLicense     @default(ORIGINAL)
   sections    MockTestSection[]
   questions   MockTestQuestion[]
   conversions ScoreConversion[]

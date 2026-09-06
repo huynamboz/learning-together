@@ -55,7 +55,7 @@ onMounted(loadQueue);
       <div class="min-w-0">
         <NuxtLink to="/vocabulary" class="inline-flex items-center gap-1.5 text-xs font-bold text-iris hover:underline focus-ring"><AppIcon icon="solar:arrow-left-linear" :size="15" /> Khu vực từ vựng</NuxtLink>
         <h1 class="mt-2 text-3xl font-extrabold tracking-[-0.05em] sm:text-4xl">Ôn thẻ đến hạn</h1>
-        <p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Đậu chỉ đưa ra những thẻ đã tới hạn hôm nay. Tự chấm thật để lịch ôn bám đúng trí nhớ của bạn.</p>
+        <p class="mt-2 max-w-xl text-sm leading-6 text-ink/55">Ms Chole chỉ đưa ra những thẻ đã tới hạn hôm nay. Tự chấm thật để lịch ôn bám đúng trí nhớ của bạn.</p>
       </div>
       <div class="rounded-2xl bg-mint px-4 py-3 text-right">
         <p class="text-[11px] font-bold text-ink/50">Đã ôn</p>
@@ -96,7 +96,7 @@ onMounted(loadQueue);
             <span class="mt-0.5 block text-[11px] opacity-75">{{ rating.detail }}</span>
           </button>
         </div>
-        <p class="mt-3 text-center text-xs text-ink/45">{{ flipped ? 'Chọn mức độ nhớ để Đậu xếp lịch tiếp theo.' : 'Lật thẻ trước khi tự chấm.' }}</p>
+        <p class="mt-3 text-center text-xs text-ink/45">{{ flipped ? 'Chọn mức độ nhớ để Ms Chole xếp lịch tiếp theo.' : 'Lật thẻ trước khi tự chấm.' }}</p>
       </section>
 
       <div v-else-if="loading" class="mt-5 rounded-2xl bg-mint p-6 text-sm text-ink/55">Đang tải hàng đợi ôn tập…</div>

@@ -16,7 +16,7 @@ describe('CommunityService', () => {
   it('uses a safe fallback author only when the referenced user is unavailable', async () => {
     const prisma = { post: { findMany: jest.fn().mockResolvedValue([{ id: 'post-1', authorId: 'missing', status: PostStatus.PUBLISHED }]) }, user: { findMany: jest.fn().mockResolvedValue([]) } } as never;
     const [post] = await new CommunityService(prisma).list();
-    expect(post.author.displayName).toBe('Người học Đậu TOEIC');
+    expect(post.author.displayName).toBe('Người học Ms Chole TOEIC');
   });
 
   it('returns published comments in chronological order with their authors', async () => {

@@ -10,7 +10,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'Đậu TOEIC — Học có nhịp, tiến có dấu',
+      title: 'Ms Chole TOEIC — Học có nhịp, tiến có dấu',
       meta: [{ name: 'description', content: 'Nền tảng luyện TOEIC rõ ràng, có nhịp học và phản hồi.' }]
     }
   }

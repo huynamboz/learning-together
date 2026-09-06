@@ -1,4 +1,4 @@
-import { ExamSectionKind, QuestionGroupType, QuestionKind } from '@prisma/client';
+import { ContentLicense, ExamSectionKind, QuestionGroupType, QuestionKind } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsEnum, IsInt, IsObject, IsOptional, IsString, IsUUID, Length, Max, Min, ValidateNested } from 'class-validator';
 
@@ -168,4 +168,84 @@ export class ReplaceConversionsDto {
   @ValidateNested({ each: true })
   @Type(() => ScoreConversionRowDto)
   rows!: ScoreConversionRowDto[];
+}
+
+export class UpdateMockTestDto {
+  @IsOptional()
+  @IsString()
+  @Length(3, 255)
+  title?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(600)
+  durationMin?: number;
+
+  /** Where the paper came from. Free text so a teacher can name a book, a form or themselves. */
+  @IsOptional()
+  @IsString()
+  @Length(0, 255)
+  source?: string;
+
+  @IsOptional()
+  @IsEnum(ContentLicense)
+  license?: ContentLicense;
+}
+
+export class UpdateSectionDto {
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  label?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(300)
+  durationMin?: number;
+}
+
+export class ReorderGroupsDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(200)
+  @IsUUID('4', { each: true })
+  groupIds!: string[];
+}
+
+export class UpdateGroupQuestionDto {
+  @IsOptional()
+  @IsString()
+  @Length(1, 4000)
+  prompt?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 8)
+  answerKey?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 4000)
+  explanation?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(400)
+  numberInTest?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  optionsHidden?: boolean;
+
+  /** When present, replaces the whole option set — a partial edit would leave orphan letters. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(8)
+  @ValidateNested({ each: true })
+  @Type(() => QuestionOptionDto)
+  options?: QuestionOptionDto[];
 }

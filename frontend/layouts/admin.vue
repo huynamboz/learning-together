@@ -18,8 +18,8 @@ onMounted(ensureConsole);
     <div class="admin-shell mx-auto w-full max-w-[1440px] gap-6 px-4 py-5 sm:px-6 lg:px-8">
       <aside class="admin-rail sticky top-5 hidden h-[calc(100vh-2.5rem)] flex-col rounded-[24px] bg-ink p-4 text-white lg:flex">
         <NuxtLink to="/admin" class="flex items-center gap-3 rounded-2xl px-3 py-3 transition hover:bg-white/10 focus-ring">
-          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-iris text-lg font-black">Đ</span>
-          <span class="min-w-0"><span class="block text-sm font-black">Đậu TOEIC</span><span class="mt-0.5 block text-[11px] text-white/50">Admin console</span></span>
+          <AppLogo :size="40" variant="mark" />
+          <span class="min-w-0"><span class="block text-sm font-black">Ms Chole TOEIC</span><span class="mt-0.5 block text-[11px] text-white/50">Admin console</span></span>
         </NuxtLink>
 
         <nav class="mt-6 flex-1 space-y-1 overflow-y-auto" aria-label="Khu vực quản trị">

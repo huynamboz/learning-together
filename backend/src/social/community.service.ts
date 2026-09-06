@@ -10,7 +10,7 @@ export class CommunityService {
   async list(cursor?: string, limit = 20) {
     const posts = await this.prisma.post.findMany({ where: { status: PostStatus.PUBLISHED }, orderBy: { createdAt: 'desc' }, take: Math.min(Math.max(limit, 1), 50), ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}) });
     const authorById = await this.authorsById(posts.map(({ authorId }) => authorId));
-    return posts.map((post) => ({ ...post, author: authorById.get(post.authorId) ?? { id: post.authorId, displayName: 'Người học Đậu TOEIC', avatarAssetId: null } }));
+    return posts.map((post) => ({ ...post, author: authorById.get(post.authorId) ?? { id: post.authorId, displayName: 'Người học Ms Chole TOEIC', avatarAssetId: null } }));
   }
 
   createPost(authorId: string, dto: CreatePostDto) { return this.prisma.post.create({ data: { authorId, type: dto.type, content: dto.content.trim(), tags: dto.tags ?? [] } }); }
@@ -31,7 +31,7 @@ export class CommunityService {
     if (!post) throw new NotFoundException('Không tìm thấy bài đăng.');
     const comments = await this.prisma.comment.findMany({ where: { postId, status: PostStatus.PUBLISHED }, orderBy: { createdAt: 'asc' }, take: Math.min(Math.max(limit, 1), 100) });
     const authorById = await this.authorsById(comments.map(({ authorId }) => authorId));
-    return comments.map((comment) => ({ ...comment, author: authorById.get(comment.authorId) ?? { id: comment.authorId, displayName: 'Người học Đậu TOEIC', avatarAssetId: null } }));
+    return comments.map((comment) => ({ ...comment, author: authorById.get(comment.authorId) ?? { id: comment.authorId, displayName: 'Người học Ms Chole TOEIC', avatarAssetId: null } }));
   }
 
   private async authorsById(authorIds: string[]) {

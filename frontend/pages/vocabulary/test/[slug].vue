@@ -47,7 +47,7 @@ async function rate(rating: SrsRating) {
   if (!accessToken.value) {
     reviewed.value = new Set([...reviewed.value, entryId]);
     advance();
-    toast.info('Chưa lưu lịch ôn', 'Đăng nhập để Đậu xếp lịch nhắc lại cho từ này.');
+    toast.info('Chưa lưu lịch ôn', 'Đăng nhập để Ms Chole xếp lịch nhắc lại cho từ này.');
     return;
   }
   saving.value = true;
@@ -115,7 +115,7 @@ onMounted(loadSet);
             <span class="mt-0.5 block text-[11px] opacity-75">{{ rating.detail }}</span>
           </button>
         </div>
-        <p class="mt-3 text-center text-xs text-ink/45">{{ flipped ? 'Chọn mức độ nhớ để Đậu xếp lịch ôn tiếp theo.' : 'Lật thẻ trước khi tự chấm.' }}</p>
+        <p class="mt-3 text-center text-xs text-ink/45">{{ flipped ? 'Chọn mức độ nhớ để Ms Chole xếp lịch ôn tiếp theo.' : 'Lật thẻ trước khi tự chấm.' }}</p>
       </section>
 
       <div v-else-if="loading" class="mt-5 rounded-2xl bg-mint p-6 text-sm text-ink/55">Đang tải bộ từ…</div>

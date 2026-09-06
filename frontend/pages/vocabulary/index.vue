@@ -33,7 +33,7 @@ onMounted(async () => { await Promise.all([loadSets(), loadDue()]); });
       <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 class="text-4xl font-extrabold tracking-[-0.06em] sm:text-5xl">Từ vựng có nhịp ôn.</h1>
-          <p class="mt-3 max-w-xl text-sm leading-6 text-ink/60">Chọn một bộ từ để học, hoặc ôn những thẻ đã đến hạn theo lịch mà Đậu xếp cho bạn.</p>
+          <p class="mt-3 max-w-xl text-sm leading-6 text-ink/60">Chọn một bộ từ để học, hoặc ôn những thẻ đã đến hạn theo lịch mà Ms Chole xếp cho bạn.</p>
         </div>
         <span class="rounded-xl bg-white/70 px-3 py-2 text-xs font-extrabold text-ink/60">{{ sets.length }} bộ · {{ totalWords }} từ</span>
       </div>
@@ -44,7 +44,7 @@ onMounted(async () => { await Promise.all([loadSets(), loadDue()]); });
       <span class="min-w-0 flex-1">
         <span class="block text-sm font-extrabold">Ôn thẻ đến hạn</span>
         <span class="mt-1 block text-xs leading-5 text-ink/60">
-          <template v-if="dueCount === null">Đăng nhập để Đậu xếp lịch ôn theo trí nhớ của bạn.</template>
+          <template v-if="dueCount === null">Đăng nhập để Ms Chole xếp lịch ôn theo trí nhớ của bạn.</template>
           <template v-else-if="dueCount === 0">Hôm nay không còn thẻ nào đến hạn. Học thêm một bộ mới bên dưới.</template>
           <template v-else>{{ dueCount }} thẻ đang chờ ôn — làm trước khi học từ mới sẽ nhớ lâu hơn.</template>
         </span>
@@ -83,7 +83,7 @@ onMounted(async () => { await Promise.all([loadSets(), loadDue()]); });
 
       <aside class="space-y-4">
         <section class="rounded-[22px] bg-mint p-5 sm:p-6">
-          <p class="text-xs font-extrabold text-[#46A900]">CÁCH ĐẬU XẾP LỊCH</p>
+          <p class="text-xs font-extrabold text-[#46A900]">CÁCH MS CHOLE XẾP LỊCH</p>
           <ul class="mt-3 space-y-2 text-xs leading-5 text-ink/65">
             <li><span class="font-extrabold">Lại</span> — gặp lại ngay trong phiên này.</li>
             <li><span class="font-extrabold">Khó</span> — ôn lại sau vài giờ.</li>

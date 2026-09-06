@@ -258,7 +258,7 @@ async function main() {
     prisma.plan.upsert({ where: { code: 'PRO' }, update: { displayName: 'Pro' }, create: { code: 'PRO', displayName: 'Pro' } }),
     prisma.plan.upsert({ where: { code: 'PREMIUM' }, update: { displayName: 'Premium' }, create: { code: 'PREMIUM', displayName: 'Premium' } })
   ]);
-  const admin = await ensureUser(adminEmail, 'Đậu TOEIC Admin', adminPassword, [RoleName.SUPER_ADMIN, RoleName.ADMIN, RoleName.CONTENT_EDITOR, RoleName.MODERATOR]);
+  const admin = await ensureUser(adminEmail, 'Ms Chole TOEIC Admin', adminPassword, [RoleName.SUPER_ADMIN, RoleName.ADMIN, RoleName.CONTENT_EDITOR, RoleName.MODERATOR]);
   const learner = await ensureUser(learnerEmail, 'Người học demo', learnerPassword, [RoleName.LEARNER]);
 
   // Listening catalog — one lesson per part so /listen has a real list to browse.

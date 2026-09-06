@@ -24,7 +24,7 @@ async function bootstrap(): Promise<void> {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  const swaggerConfig = new DocumentBuilder().setTitle('Đậu TOEIC API').setDescription('API nền tảng học TOEIC').setVersion('1.0').addBearerAuth().build();
+  const swaggerConfig = new DocumentBuilder().setTitle('Ms Chole TOEIC API').setDescription('API nền tảng học TOEIC').setVersion('1.0').addBearerAuth().build();
   SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig));
 
   await app.listen(Number(process.env.PORT ?? 3010));

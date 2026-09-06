@@ -8,7 +8,7 @@ describe('LeaderboardService', () => {
     } as never;
     await expect(new LeaderboardService(prisma).xp(10)).resolves.toEqual([
       { rank: 1, displayName: 'Mai Anh', xp: 30 },
-      { rank: 2, displayName: 'Người học Đậu TOEIC', xp: 10 }
+      { rank: 2, displayName: 'Người học Ms Chole TOEIC', xp: 10 }
     ]);
     expect((prisma as any).user.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { in: ['user-b', 'removed-user'] } } }));
   });
