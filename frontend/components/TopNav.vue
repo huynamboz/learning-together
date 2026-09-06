@@ -35,10 +35,10 @@ const navItems = [
             <p class="text-xs font-bold text-ink/45">THÔNG BÁO</p>
             <p class="mt-2 text-sm font-bold">Bạn đã cập nhật đến đây.</p>
             <p class="mt-1 text-xs leading-5 text-ink/50">Khi có hoạt động mới, thông báo sẽ xuất hiện trong hộp này.</p>
-            <NuxtLink to="/account" class="mt-3 inline-flex text-xs font-bold text-iris hover:underline focus-ring" @click="notificationOpen = false">Mở tài khoản →</NuxtLink>
+            <NuxtLink to="/hub?tab=notifications" class="mt-3 inline-flex text-xs font-bold text-iris hover:underline focus-ring" @click="notificationOpen = false">Mở thông báo →</NuxtLink>
           </div>
         </div>
-        <NuxtLink to="/account" class="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-iris font-bold text-white shadow-soft focus-ring" aria-label="Mở tài khoản">N</NuxtLink>
+        <NuxtLink to="/hub?tab=profile" class="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-iris font-bold text-white shadow-soft focus-ring" aria-label="Mở hồ sơ">N</NuxtLink>
       </div>
     </div>
     <div class="flex gap-1 overflow-x-auto border-t border-line/50 px-4 py-2 xl:hidden">

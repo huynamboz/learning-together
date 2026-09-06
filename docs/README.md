@@ -29,6 +29,8 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 - [Phase 11 — Media and Writing review browser verification](./implementation-plan/phase-11-browser-verification.md)
 - [Phase 12 — Learner dashboard and leaderboard plan](./implementation-plan/phase-12-dashboard-and-leaderboard-plan.md)
 - [Phase 12 — Learner dashboard and leaderboard verification](./implementation-plan/phase-12-browser-verification.md)
+- [Phase 13 — Account Hub and Profile](./implementation-plan/phase-13-account-hub-profile-plan.md)
+- [Phase 13 — Account Hub browser verification](./implementation-plan/phase-13-browser-verification.md)
 - [Tài khoản, gói học và affiliate](./09-account-and-monetization.md)
 - [Blog, giới thiệu và feedback](./10-blog-about-feedback.md)
 - [Pháp lý, footer và tương thích route](./11-legal-and-navigation.md)
