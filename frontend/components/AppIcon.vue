@@ -18,6 +18,7 @@ import solarClose from '@iconify-icons/solar/close-circle-bold';
 import solarCup from '@iconify-icons/solar/cup-star-bold';
 import solarDocument from '@iconify-icons/solar/document-text-bold';
 import solarFire from '@iconify-icons/solar/fire-bold';
+import solarGallery from '@iconify-icons/solar/gallery-round-bold';
 import solarHeadphones from '@iconify-icons/solar/headphones-round-sound-bold';
 import solarMedal from '@iconify-icons/solar/medal-ribbon-star-bold';
 import solarLibrary from '@iconify-icons/solar/library-bold';
@@ -52,6 +53,7 @@ const iconMap: Record<string, IconifyIcon> = {
   'solar:cup-star-bold': solarCup,
   'solar:document-text-bold': solarDocument,
   'solar:fire-bold': solarFire,
+  'solar:gallery-round-bold': solarGallery,
   'solar:headphones-round-sound-bold': solarHeadphones,
   'solar:medal-ribbon-star-bold': solarMedal,
   'solar:library-bold': solarLibrary,

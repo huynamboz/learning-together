@@ -1,5 +1,5 @@
 import * as argon2 from 'argon2';
-import { ContentStatus, ContentType, CreditEntryType, PrismaClient, QuestionKind, RoleName, SrsState } from '@prisma/client';
+import { ContentStatus, ContentType, CreditEntryType, ExamSectionKind, PrismaClient, QuestionGroupType, QuestionKind, RoleName, SrsState } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -29,7 +29,10 @@ async function ensureContent(adminId: string, input: { slug: string; title: stri
 }
 
 async function ensureQuestion(input: {
-  contentItemId: string;
+  contentItemId?: string;
+  groupId?: string;
+  numberInTest?: number;
+  optionsHidden?: boolean;
   kind: QuestionKind;
   part: number;
   level: number;
@@ -39,19 +42,23 @@ async function ensureQuestion(input: {
   options: Array<{ key: string; text: string }>;
   order: number;
 }) {
-  const existing = await prisma.question.findFirst({ where: { contentItemId: input.contentItemId, prompt: { equals: { text: input.prompt } } } });
-  const question = existing ?? await prisma.question.create({
-    data: {
-      contentItemId: input.contentItemId,
-      kind: input.kind,
-      part: input.part,
-      level: input.level,
-      prompt: { text: input.prompt },
-      answerKey: input.answerKey,
-      explanation: { text: input.explanation },
-      status: ContentStatus.PUBLISHED
-    }
-  });
+  const existing = await prisma.question.findFirst({ where: { prompt: { equals: { text: input.prompt } }, ...(input.groupId ? { groupId: input.groupId } : { contentItemId: input.contentItemId }) } });
+  const data = {
+    contentItemId: input.contentItemId ?? null,
+    groupId: input.groupId ?? null,
+    numberInTest: input.numberInTest ?? null,
+    optionsHidden: input.optionsHidden ?? false,
+    kind: input.kind,
+    part: input.part,
+    level: input.level,
+    prompt: { text: input.prompt },
+    answerKey: input.answerKey,
+    explanation: { text: input.explanation },
+    status: ContentStatus.PUBLISHED
+  };
+  const question = existing
+    ? await prisma.question.update({ where: { id: existing.id }, data })
+    : await prisma.question.create({ data });
   await Promise.all(input.options.map((option, index) => prisma.questionOption.upsert({
     where: { questionId_key: { questionId: question.id, key: option.key } },
     update: { text: { text: option.text }, sortOrder: index + 1 },
@@ -77,6 +84,167 @@ async function ensureVocabularySet(input: { slug: string; title: string; descrip
     create: { setId: set.id, entryId: entry.id, sortOrder: index + 1 }
   })));
   return { set, entries };
+}
+
+/**
+ * Builds one test in the real TOEIC shape: sections that are timed separately, and question
+ * groups that own the stimulus their questions hang off. Every group type is exercised so the
+ * runner has something to render for each of the seven parts.
+ */
+async function ensureFormattedMockTest() {
+  const test = await prisma.mockTest.upsert({
+    where: { slug: 'mini-toeic-full-format' },
+    update: { title: 'Mini TOEIC · đủ 7 dạng', durationMin: 20, status: ContentStatus.PUBLISHED },
+    create: { slug: 'mini-toeic-full-format', title: 'Mini TOEIC · đủ 7 dạng', durationMin: 20, status: ContentStatus.PUBLISHED }
+  });
+
+  async function ensureSection(kind: ExamSectionKind, label: string, durationMin: number, sortOrder: number) {
+    const existing = await prisma.mockTestSection.findFirst({ where: { testId: test.id, sortOrder } });
+    return existing
+      ? prisma.mockTestSection.update({ where: { id: existing.id }, data: { kind, label, durationMin } })
+      : prisma.mockTestSection.create({ data: { testId: test.id, kind, label, durationMin, sortOrder } });
+  }
+
+  async function ensureGroup(input: { sectionId: string; type: QuestionGroupType; part: number; sortOrder: number; stimulus: Record<string, unknown>; transcript?: string }) {
+    const existing = await prisma.questionGroup.findFirst({ where: { sectionId: input.sectionId, sortOrder: input.sortOrder } });
+    const data = { type: input.type, part: input.part, stimulus: input.stimulus as never, transcript: input.transcript ?? null };
+    return existing
+      ? prisma.questionGroup.update({ where: { id: existing.id }, data })
+      : prisma.questionGroup.create({ data: { ...data, sectionId: input.sectionId, sortOrder: input.sortOrder } });
+  }
+
+  const listening = await ensureSection(ExamSectionKind.LISTENING, 'Listening', 8, 1);
+  const reading = await ensureSection(ExamSectionKind.READING, 'Reading', 12, 2);
+
+  const abcd = (a: string, b: string, c: string, d: string) => [{ key: 'A', text: a }, { key: 'B', text: b }, { key: 'C', text: c }, { key: 'D', text: d }];
+  const items: Array<{ id: string; sectionId: string }> = [];
+  const add = (question: { id: string }, sectionId: string) => { items.push({ id: question.id, sectionId }); };
+
+  // Part 1 — only the photograph is printed; the four statements are audio-only.
+  const photo = await ensureGroup({
+    sectionId: listening.id, type: QuestionGroupType.PHOTO, part: 1, sortOrder: 1,
+    stimulus: { directions: 'Chọn câu mô tả đúng nhất tấm ảnh.', photoCaption: 'Một người đang xếp hộp lên xe đẩy trong kho.' },
+    transcript: '(W-Am) (A) He is loading boxes onto a cart. (B) He is opening a delivery van. (C) He is stacking shelves. (D) He is sweeping the floor.'
+  });
+  add(await ensureQuestion({
+    groupId: photo.id, numberInTest: 1, optionsHidden: true, kind: QuestionKind.LISTENING, part: 1, level: 1, order: 1,
+    prompt: 'Nghe bốn câu mô tả và chọn câu đúng nhất với tấm ảnh.', answerKey: 'A',
+    explanation: 'Người trong ảnh đang xếp hộp lên xe đẩy, khớp với câu (A).',
+    options: abcd('He is loading boxes onto a cart.', 'He is opening a delivery van.', 'He is stacking shelves.', 'He is sweeping the floor.')
+  }), listening.id);
+
+  // Part 2 — nothing at all is printed, and there are only three responses.
+  const response = await ensureGroup({
+    sectionId: listening.id, type: QuestionGroupType.SHORT_RESPONSE, part: 2, sortOrder: 2,
+    stimulus: { directions: 'Nghe câu hỏi và ba phản hồi, chọn phản hồi phù hợp nhất.' },
+    transcript: "(W-Br) Where's the new fax machine? (M-Cn) (A) Next to the copier. (B) Yes, I sent it. (C) About twenty pages."
+  });
+  add(await ensureQuestion({
+    groupId: response.id, numberInTest: 7, optionsHidden: true, kind: QuestionKind.LISTENING, part: 2, level: 1, order: 1,
+    prompt: 'Mark your answer on your answer sheet.', answerKey: 'A',
+    explanation: 'Câu hỏi hỏi vị trí, nên phản hồi chỉ nơi chốn là phù hợp.',
+    options: [{ key: 'A', text: 'Next to the copier.' }, { key: 'B', text: 'Yes, I sent it.' }, { key: 'C', text: 'About twenty pages.' }]
+  }), listening.id);
+
+  // Part 3 — one conversation feeds three printed questions.
+  const conversation = await ensureGroup({
+    sectionId: listening.id, type: QuestionGroupType.CONVERSATION, part: 3, sortOrder: 3,
+    stimulus: { directions: 'Nghe hội thoại rồi trả lời ba câu hỏi.', speakers: 2 },
+    transcript: '(W-Am) Hi, I ordered a desk lamp last week but it arrived damaged. (M-Au) I am sorry about that. I can send a replacement today, or refund you in full. (W-Am) A replacement is fine, as long as it gets here before Friday.'
+  });
+  const conversationQuestions = [
+    { number: 32, prompt: 'Why is the woman calling?', key: 'B', explanation: 'Cô ấy gọi vì món hàng nhận được bị hỏng.', options: abcd('To cancel an order', 'To report a damaged item', 'To change an address', 'To ask about a discount') },
+    { number: 33, prompt: 'What does the man offer to do?', key: 'C', explanation: 'Anh ấy đề nghị gửi hàng thay thế hoặc hoàn tiền.', options: abcd('Waive a delivery fee', 'Extend a warranty', 'Send a replacement', 'Call a supervisor') },
+    { number: 34, prompt: 'What does the woman require?', key: 'A', explanation: 'Cô ấy chỉ yêu cầu hàng đến trước thứ Sáu.', options: abcd('Delivery before Friday', 'A written apology', 'A full refund', 'An upgraded model') }
+  ];
+  for (const [index, item] of conversationQuestions.entries()) {
+    add(await ensureQuestion({ groupId: conversation.id, numberInTest: item.number, kind: QuestionKind.LISTENING, part: 3, level: 2, order: index + 1, prompt: item.prompt, answerKey: item.key, explanation: item.explanation, options: item.options }), listening.id);
+  }
+
+  // Part 4 — a single speaker, three printed questions.
+  const talk = await ensureGroup({
+    sectionId: listening.id, type: QuestionGroupType.TALK, part: 4, sortOrder: 4,
+    stimulus: { directions: 'Nghe bài nói rồi trả lời ba câu hỏi.', talkType: 'Telephone message' },
+    transcript: '(M-Cn) Hello Ms. Tran, this is Daniel from Brightline Auto. Your car is ready, and the repair is covered by your warranty, so there is nothing to pay. We close at six, but I can leave the keys at the front desk if you arrive later.'
+  });
+  const talkQuestions = [
+    { number: 71, prompt: 'What does the speaker say about the repair?', key: 'D', explanation: 'Anh ấy nói chi phí đã được bảo hành chi trả.', options: abcd('It is not required.', 'It has been delayed.', 'It will be expensive.', 'It is covered by a warranty.') },
+    { number: 72, prompt: 'What is the listener asked to consider?', key: 'B', explanation: 'Người gọi nhắc giờ đóng cửa để người nghe sắp xếp thời gian đến.', options: abcd('Booking a second service', 'The closing time of the shop', 'Buying a replacement part', 'Renewing a warranty') },
+    { number: 73, prompt: 'What will happen if the listener arrives late?', key: 'A', explanation: 'Chìa khóa sẽ được để lại ở quầy lễ tân.', options: abcd('Keys will be left at the front desk.', 'The car will be moved to a lot.', 'The repair will be rescheduled.', 'A fee will be added.') }
+  ];
+  for (const [index, item] of talkQuestions.entries()) {
+    add(await ensureQuestion({ groupId: talk.id, numberInTest: item.number, kind: QuestionKind.LISTENING, part: 4, level: 2, order: index + 1, prompt: item.prompt, answerKey: item.key, explanation: item.explanation, options: item.options }), listening.id);
+  }
+
+  // Part 5 — each sentence stands alone, so each is its own group of one.
+  const singles = [
+    { sortOrder: 5, number: 101, prompt: 'The marketing team will present the new campaign ____ Monday morning.', key: 'B', explanation: 'Dùng on với thứ trong tuần.', options: abcd('at', 'on', 'in', 'by') },
+    { sortOrder: 6, number: 102, prompt: 'The list of approved suppliers ____ updated every quarter.', key: 'A', explanation: 'Chủ ngữ chính là list, số ít.', options: abcd('is', 'are', 'were', 'have been') }
+  ];
+  for (const single of singles) {
+    const group = await ensureGroup({ sectionId: reading.id, type: QuestionGroupType.SINGLE_SENTENCE, part: 5, sortOrder: single.sortOrder, stimulus: { directions: 'Chọn từ hoặc cụm từ điền vào chỗ trống.' } });
+    add(await ensureQuestion({ groupId: group.id, numberInTest: single.number, kind: QuestionKind.GRAMMAR, part: 5, level: 2, order: 1, prompt: single.prompt, answerKey: single.key, explanation: single.explanation, options: single.options }), reading.id);
+  }
+
+  // Part 6 — one text, four blanks, and one of those blanks takes a whole sentence.
+  const completion = await ensureGroup({
+    sectionId: reading.id, type: QuestionGroupType.TEXT_COMPLETION, part: 6, sortOrder: 7,
+    stimulus: {
+      directions: 'Đọc văn bản và chọn phương án điền vào mỗi chỗ trống.',
+      passages: [{
+        label: 'E-mail',
+        body: 'To all Pak Designs project leaders:\n\nIn the coming weeks we will be organizing several training sessions for ---(131)--- employees. With support from senior leaders, less experienced staff can quickly ---(132)--- a deep understanding of the design process. ---(133)---, they can improve how they communicate across divisions.\n\n---(134)---\n\nThank you for your support.\nJames Pak'
+      }]
+    }
+  });
+  const completionQuestions = [
+    { number: 131, prompt: 'Chỗ trống (131)', key: 'C', explanation: 'Buổi tập huấn dành cho nhân viên mới vào nghề.', options: abcd('interested', 'retiring', 'incoming', 'departing') },
+    { number: 132, prompt: 'Chỗ trống (132)', key: 'A', explanation: 'gain a deep understanding là cụm cố định.', options: abcd('gain', 'give', 'take', 'make') },
+    { number: 133, prompt: 'Chỗ trống (133)', key: 'D', explanation: 'Câu sau bổ sung thêm một lợi ích nữa.', options: abcd('However', 'Instead', 'Otherwise', 'In addition') },
+    { number: 134, prompt: 'Chỗ trống (134) — chọn câu phù hợp nhất để điền vào đoạn', key: 'B', explanation: 'Chỉ câu này nối tiếp lời kêu gọi tham dự buổi tập huấn.', options: abcd('The office will be closed next week.', 'Please sign up for a session before Friday.', 'Our new logo has been approved.', 'Parking passes remain valid.') }
+  ];
+  for (const [index, item] of completionQuestions.entries()) {
+    add(await ensureQuestion({ groupId: completion.id, numberInTest: item.number, kind: QuestionKind.READING, part: 6, level: 2, order: index + 1, prompt: item.prompt, answerKey: item.key, explanation: item.explanation, options: item.options }), reading.id);
+  }
+
+  // Part 7 — a set of two texts, including a sentence-insertion question.
+  const passageSet = await ensureGroup({
+    sectionId: reading.id, type: QuestionGroupType.PASSAGE_SET, part: 7, sortOrder: 8,
+    stimulus: {
+      directions: 'Đọc bộ văn bản rồi trả lời các câu hỏi.',
+      passages: [
+        { label: 'Notice', body: 'Mooringtown Library invites community groups to use the free advertising space on its notice board. ---[1]--- Space is available for up to four weeks at a time. ---[2]--- Notices must be approved in advance at the front desk. ---[3]--- All content must be suitable for public display. ---[4]---' },
+        { label: 'E-mail', body: 'Hi Dana — I dropped our reading club notice at the desk this morning. They said approval takes one business day, so it should be up before the weekend. Can you print a second copy in the smaller size just in case?' }
+      ]
+    }
+  });
+  const passageQuestions = [
+    { number: 147, prompt: 'What is indicated about the notice board?', key: 'A', explanation: 'Thông báo nói không gian này miễn phí.', options: abcd('It is free to use.', 'It is only for staff.', 'It is checked weekly.', 'It was recently moved.') },
+    { number: 148, prompt: 'In which of the positions marked [1], [2], [3] and [4] does the following sentence best belong? “The name and telephone number of the person posting the notice must be clearly marked on the back.”', key: 'D', explanation: 'Câu này nói tiếp về yêu cầu nội dung, nên hợp nhất ở vị trí [4].', options: abcd('[1]', '[2]', '[3]', '[4]') }
+  ];
+  for (const [index, item] of passageQuestions.entries()) {
+    add(await ensureQuestion({ groupId: passageSet.id, numberInTest: item.number, kind: QuestionKind.READING, part: 7, level: 3, order: index + 1, prompt: item.prompt, answerKey: item.key, explanation: item.explanation, options: item.options }), reading.id);
+  }
+
+  await Promise.all(items.map((item, index) => prisma.mockTestQuestion.upsert({
+    where: { testId_questionId: { testId: test.id, questionId: item.id } },
+    update: { sortOrder: index + 1, sectionId: item.sectionId },
+    create: { testId: test.id, questionId: item.id, sortOrder: index + 1, sectionId: item.sectionId }
+  })));
+
+  // A raw-to-scaled table for this form, so results report a real conversion, not an estimate.
+  const listeningTotal = items.filter((item) => item.sectionId === listening.id).length;
+  const readingTotal = items.length - listeningTotal;
+  const table = (section: ExamSectionKind, total: number, top: number) =>
+    Array.from({ length: total + 1 }, (_, raw) => ({ section, rawCorrect: raw, scaled: Math.max(5, Math.round((5 + (raw / Math.max(total, 1)) * (top - 5)) / 5) * 5) }));
+  const rows = [...table(ExamSectionKind.LISTENING, listeningTotal, 495), ...table(ExamSectionKind.READING, readingTotal, 470)];
+  await Promise.all(rows.map((row) => prisma.scoreConversion.upsert({
+    where: { testId_section_rawCorrect: { testId: test.id, section: row.section, rawCorrect: row.rawCorrect } },
+    update: { scaled: row.scaled },
+    create: { testId: test.id, section: row.section, rawCorrect: row.rawCorrect, scaled: row.scaled }
+  })));
+
+  return { test, questionCount: items.length };
 }
 
 async function main() {
@@ -165,13 +333,15 @@ async function main() {
 
   const readingTest = await prisma.mockTest.upsert({ where: { slug: 'mini-reading-drill' }, update: { status: ContentStatus.PUBLISHED, durationMin: 15 }, create: { slug: 'mini-reading-drill', title: 'Mini Reading Drill · Part 7', durationMin: 15, status: ContentStatus.PUBLISHED } });
   await Promise.all(readingQuestions.map((item, index) => prisma.mockTestQuestion.upsert({ where: { testId_questionId: { testId: readingTest.id, questionId: item.id } }, update: { sortOrder: index + 1, part: 7 }, create: { testId: readingTest.id, questionId: item.id, sortOrder: index + 1, part: 7 } })));
+  const formatted = await ensureFormattedMockTest();
+
   const credit = await prisma.aiCreditLedger.findFirst({ where: { userId: learner.id, type: CreditEntryType.GRANT } });
   if (!credit) await prisma.aiCreditLedger.create({ data: { userId: learner.id, type: CreditEntryType.GRANT, amount: 5, balanceAfter: 5, metadata: { purpose: 'seed' } } });
   const post = await prisma.post.findFirst({ where: { authorId: learner.id, content: { contains: 'dictation' } } });
   if (!post) await prisma.post.create({ data: { authorId: learner.id, type: 'QUESTION', content: 'Mình đang luyện dictation mỗi tối, có mẹo nào để nhớ nối âm tốt hơn không?', tags: ['Listening', 'Dictation'] } });
   await prisma.auditLog.create({ data: { actorId: admin.id, action: 'SEED_COMPLETED', entity: 'System', metadata: { listeningContentId: listening.id, learnerId: learner.id } } });
   const publishedContent = await prisma.contentItem.count({ where: { status: ContentStatus.PUBLISHED } });
-  console.log(`Seed complete. Admin: ${admin.email}; learner: ${learner.email}; published content: ${publishedContent}.`);
+  console.log(`Seed complete. Admin: ${admin.email}; learner: ${learner.email}; published content: ${publishedContent}; full-format test: ${formatted.questionCount} questions across 2 sections.`);
 }
 
 main().catch((error) => { console.error(error); process.exit(1); }).finally(() => prisma.$disconnect());

@@ -95,6 +95,29 @@ enum ImportStatus {
   CANCELED
 }
 
+enum ExamSectionKind {
+  LISTENING
+  READING
+}
+
+/// How a group of questions is presented; the runner renders from this, not from `part`.
+enum QuestionGroupType {
+  PHOTO
+  SHORT_RESPONSE
+  CONVERSATION
+  TALK
+  SINGLE_SENTENCE
+  TEXT_COMPLETION
+  PASSAGE_SET
+}
+
+/// Where a scaled score came from, so the UI never presents an estimate as an official number.
+enum ScoreSource {
+  OFFICIAL_TABLE
+  ESTIMATED
+  RAW_ONLY
+}
+
 enum QuestionKind {
   LISTENING
   READING
@@ -314,22 +337,24 @@ model AuditLog {
 }
 
 model MediaAsset {
-  id            String          @id @default(uuid()) @db.Uuid
-  ownerId       String?         @db.Uuid
+  id            String               @id @default(uuid()) @db.Uuid
+  ownerId       String?              @db.Uuid
   provider      StorageProvider
-  bucket        String          @db.VarChar(255)
-  objectKey     String          @unique @db.VarChar(1024)
-  originalName  String          @db.VarChar(255)
-  mimeType      String          @db.VarChar(120)
+  bucket        String               @db.VarChar(255)
+  objectKey     String               @unique @db.VarChar(1024)
+  originalName  String               @db.VarChar(255)
+  mimeType      String               @db.VarChar(120)
   byteSize      BigInt
-  checksum      String?         @db.VarChar(128)
-  status        MediaStatus     @default(PENDING)
-  visibility    String          @default("private") @db.VarChar(32)
+  checksum      String?              @db.VarChar(128)
+  status        MediaStatus          @default(PENDING)
+  visibility    String               @default("private") @db.VarChar(32)
   metadata      Json?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  owner         User?           @relation("MediaOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  owner         User?                @relation("MediaOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   uploadSession UploadSession?
+  groupAudio    QuestionGroup[]      @relation("GroupAudio")
+  groupMedia    QuestionGroupMedia[] @relation("GroupMedia")
 
   @@index([ownerId, status, createdAt])
 }
@@ -371,6 +396,7 @@ model ContentItem {
   updatedBy      User?            @relation("ContentUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
   versions       ContentVersion[]
   questions      Question[]
+  questionGroups QuestionGroup[]
 
   @@index([type, status, part, level])
 }
@@ -420,16 +446,22 @@ model ImportItem {
 model Question {
   id            String             @id @default(uuid()) @db.Uuid
   contentItemId String?            @db.Uuid
+  groupId       String?            @db.Uuid
   kind          QuestionKind
   part          Int?
   level         Int?
+  /// Item number as printed in the source test (1-200), so an answer key can be matched by number.
+  numberInTest  Int?
   prompt        Json
   answerKey     String?
   explanation   Json?
+  /// TOEIC Part 1 and 2 never print the answer choices; the runner shows bare letters instead.
+  optionsHidden Boolean            @default(false)
   status        ContentStatus      @default(DRAFT)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   contentItem   ContentItem?       @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  group         QuestionGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
   options       QuestionOption[]
   attempts      QuestionAttempt[]
   progress      QuestionProgress[]
@@ -437,6 +469,7 @@ model Question {
   examAnswers   ExamAnswer[]
 
   @@index([kind, part, level, status])
+  @@index([groupId, numberInTest])
 }
 
 model QuestionOption {
@@ -579,21 +612,94 @@ model MockTest {
   id          String             @id @default(uuid()) @db.Uuid
   slug        String             @unique @db.VarChar(255)
   title       String             @db.VarChar(255)
+  /// Total time. A sectioned test derives this from its sections; kept for legacy flat tests.
   durationMin Int
   status      ContentStatus      @default(DRAFT)
+  sections    MockTestSection[]
   questions   MockTestQuestion[]
+  conversions ScoreConversion[]
   sessions    ExamSession[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 }
 
+/// Listening and Reading are timed differently — the tape paces one, the reader paces the other.
+model MockTestSection {
+  id          String             @id @default(uuid()) @db.Uuid
+  testId      String             @db.Uuid
+  kind        ExamSectionKind
+  label       String             @db.VarChar(120)
+  durationMin Int
+  sortOrder   Int
+  test        MockTest           @relation(fields: [testId], references: [id], onDelete: Cascade)
+  groups      QuestionGroup[]
+  questions   MockTestQuestion[]
+
+  @@unique([testId, sortOrder])
+  @@index([testId, kind])
+}
+
+/// One stimulus — a photo, a conversation, a passage set — and the questions that hang off it.
+model QuestionGroup {
+  id            String               @id @default(uuid()) @db.Uuid
+  sectionId     String?              @db.Uuid
+  contentItemId String?              @db.Uuid
+  type          QuestionGroupType
+  part          Int
+  sortOrder     Int
+  /// Author JSON: directions, passages, chart captions. Read defensively, like content payloads.
+  stimulus      Json                 @default("{}")
+  transcript    String?
+  audioAssetId  String?              @db.Uuid
+  /// Offsets into a single long recording, so one 45-minute file can serve every listening group.
+  audioStartSec Int?
+  audioEndSec   Int?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  section       MockTestSection?     @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  contentItem   ContentItem?         @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  audioAsset    MediaAsset?          @relation("GroupAudio", fields: [audioAssetId], references: [id], onDelete: SetNull)
+  media         QuestionGroupMedia[]
+  questions     Question[]
+
+  @@index([sectionId, sortOrder])
+  @@index([contentItemId, part])
+}
+
+/// Ordered images for a group: Part 1 photographs, Part 3/4 charts.
+model QuestionGroupMedia {
+  groupId   String        @db.Uuid
+  assetId   String        @db.Uuid
+  role      String        @default("photo") @db.VarChar(32)
+  caption   String?       @db.VarChar(255)
+  sortOrder Int
+  group     QuestionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  asset     MediaAsset    @relation("GroupMedia", fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, assetId])
+  @@index([groupId, sortOrder])
+}
+
+/// Raw correct answers to a scaled section score, published per test form by the test owner.
+model ScoreConversion {
+  testId     String          @db.Uuid
+  section    ExamSectionKind
+  rawCorrect Int
+  scaled     Int
+  test       MockTest        @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@id([testId, section, rawCorrect])
+}
+
 model MockTestQuestion {
-  testId     String   @db.Uuid
-  questionId String   @db.Uuid
+  testId     String           @db.Uuid
+  questionId String           @db.Uuid
+  sectionId  String?          @db.Uuid
   sortOrder  Int
   part       Int?
-  test       MockTest @relation(fields: [testId], references: [id], onDelete: Cascade)
-  question   Question @relation(fields: [questionId], references: [id])
+  test       MockTest         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  question   Question         @relation(fields: [questionId], references: [id])
+  section    MockTestSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
 
   @@id([testId, questionId])
   @@unique([testId, sortOrder])
@@ -630,15 +736,21 @@ model ExamAnswer {
 }
 
 model ExamResult {
-  sessionId   String      @id @db.Uuid
-  total       Int
-  correct     Int
-  wrong       Int
-  unanswered  Int
-  score       Int?
-  durationSec Int
-  createdAt   DateTime    @default(now())
-  session     ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId        String      @id @db.Uuid
+  total            Int
+  correct          Int
+  wrong            Int
+  unanswered       Int
+  /// Sum of the section scaled scores; null when neither a table nor an estimate applies.
+  score            Int?
+  listeningCorrect Int?
+  readingCorrect   Int?
+  listeningScaled  Int?
+  readingScaled    Int?
+  scoreSource      ScoreSource @default(RAW_ONLY)
+  durationSec      Int
+  createdAt        DateTime    @default(now())
+  session          ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model WritingSubmission {

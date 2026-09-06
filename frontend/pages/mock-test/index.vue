@@ -1,5 +1,11 @@
 <script setup lang="ts">
-type CatalogTest = { id: string; slug: string; title: string; durationMin: number; questionCount: number };
+import { sectionLabel } from '~/utils/exam';
+
+type CatalogTest = {
+  id: string; slug: string; title: string; durationMin: number; questionCount: number;
+  hasScoreTable: boolean;
+  sections: Array<{ id: string; kind: 'LISTENING' | 'READING'; label: string; durationMin: number }>;
+};
 
 const { request, accessToken } = useAppApi();
 const tests = ref<CatalogTest[]>([]);
@@ -50,6 +56,9 @@ onMounted(loadCatalog);
                 <div class="mt-2 flex flex-wrap gap-1.5">
                   <span class="rounded-lg bg-white px-2 py-0.5 text-[11px] font-bold text-ink/55">{{ test.questionCount }} câu</span>
                   <span class="rounded-lg bg-white px-2 py-0.5 text-[11px] font-bold text-ink/55">{{ test.durationMin }} phút</span>
+                  <span v-for="section in test.sections" :key="section.id" class="rounded-lg bg-white px-2 py-0.5 text-[11px] font-bold text-ink/55">{{ sectionLabel(section.kind) }} {{ section.durationMin }}′</span>
+                  <span v-if="test.hasScoreTable" class="rounded-lg bg-grass/15 px-2 py-0.5 text-[11px] font-bold text-[#46A900]">Có bảng quy đổi</span>
+                  <span v-else class="rounded-lg bg-sun px-2 py-0.5 text-[11px] font-bold text-[#A87400]">Điểm ước lượng</span>
                 </div>
               </div>
             </div>
