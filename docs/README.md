@@ -35,6 +35,7 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 - [Phase 15 — Admin console routes, toast và dialog](./implementation-plan/phase-15-admin-console-and-overlays-verification.md)
 - [Phase 16 — Catalog và runner cho sáu khu vực học](./implementation-plan/phase-16-learner-catalog-and-runner-verification.md)
 - [Phase 17 — Nhóm câu hỏi, section và quy đổi điểm](./implementation-plan/phase-17-exam-groups-sections-and-scoring.md)
+- [Phase 18 — Console dựng đề thi](./implementation-plan/phase-18-exam-builder-console.md)
 - [Tài khoản, gói học và affiliate](./09-account-and-monetization.md)
 - [Blog, giới thiệu và feedback](./10-blog-about-feedback.md)
 - [Pháp lý, footer và tương thích route](./11-legal-and-navigation.md)
@@ -59,7 +60,7 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 
 ## Implementation planning
 
-Bộ planning nằm trong [docs/implementation-plan](./implementation-plan/00-master-plan.md), gồm requirements/route map, backend architecture, domain model, API contract, storage abstraction, admin operations, design system, frontend IA, testing, security/devops và phase/commit checklist. Các phase đã triển khai có browser verification riêng; log mới nhất là [Phase 17](./implementation-plan/phase-17-exam-groups-sections-and-scoring.md).
+Bộ planning nằm trong [docs/implementation-plan](./implementation-plan/00-master-plan.md), gồm requirements/route map, backend architecture, domain model, API contract, storage abstraction, admin operations, design system, frontend IA, testing, security/devops và phase/commit checklist. Các phase đã triển khai có browser verification riêng; log mới nhất là [Phase 18](./implementation-plan/phase-18-exam-builder-console.md).
 
 ## Ghi chú triển khai
 

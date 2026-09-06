@@ -10,6 +10,7 @@ export const adminSections: ReadonlyArray<AdminSection> = [
   { key: 'overview', label: 'Tổng quan', detail: 'KPI và việc đang chờ', icon: 'solar:chart-2-bold', to: '/admin' },
   { key: 'content', label: 'Content', detail: 'Kho bài học và publish', icon: 'solar:library-bold', to: '/admin/content' },
   { key: 'media', label: 'Media', detail: 'Upload và asset library', icon: 'solar:music-library-2-bold', to: '/admin/media' },
+  { key: 'exams', label: 'Đề thi', detail: 'Dựng đề theo section', icon: 'solar:clipboard-list-bold', to: '/admin/exams' },
   { key: 'imports', label: 'Import', detail: 'Nhập content theo batch', icon: 'solar:cloud-upload-bold', to: '/admin/imports' },
   { key: 'writing', label: 'Writing review', detail: 'Chấm bài đang chờ', icon: 'solar:pen-new-square-bold', to: '/admin/writing' },
   { key: 'users', label: 'Người dùng', detail: 'Quyền và trạng thái', icon: 'solar:users-group-rounded-bold', to: '/admin/users' },

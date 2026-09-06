@@ -52,6 +52,12 @@ const groupPeers = computed(() => current.value?.groupId ? questions.value.filte
 const positionInGroup = computed(() => current.value ? groupPeers.value.findIndex((question) => question.id === current.value?.id) + 1 : 0);
 
 const groupAudioUrl = computed(() => currentGroup.value?.audioAssetId ? `${config.public.apiBase}/media/${currentGroup.value.audioAssetId}/file` : '');
+/** Photographs and charts the admin attached to this group, in the order they were added. */
+const groupImages = computed(() => (currentGroup.value?.media ?? []).map((item) => ({
+  assetId: item.assetId,
+  caption: item.caption,
+  url: `${config.public.apiBase}/media/${item.assetId}/file`
+})));
 const caption = computed(() => result.value ? scoreCaption(result.value.scoreSource) : null);
 
 function textOf(value: JsonText | undefined) { return typeof value?.text === 'string' ? value.text : ''; }
@@ -238,13 +244,21 @@ onUnmounted(stopTimer);
           <audio :key="currentGroup?.id" class="mt-3 w-full" controls preload="metadata" :src="groupAudioUrl" />
         </section>
 
-        <section v-if="photoCaptionOf(currentGroup)" class="rounded-[22px] border border-line p-5">
+        <section v-if="groupImages.length" class="rounded-[22px] border border-line p-5">
+          <p class="text-xs font-extrabold text-ink/45">{{ currentGroup?.part === 1 ? 'TRANH' : 'HÌNH ĐỐI CHIẾU' }}</p>
+          <figure v-for="image in groupImages" :key="image.assetId" class="mt-3">
+            <img :src="image.url" :alt="image.caption || 'Hình của nhóm câu hỏi'" class="w-full rounded-2xl border border-line" loading="lazy">
+            <figcaption v-if="image.caption" class="mt-2 text-xs leading-5 text-ink/55">{{ image.caption }}</figcaption>
+          </figure>
+        </section>
+
+        <section v-else-if="photoCaptionOf(currentGroup)" class="rounded-[22px] border border-line p-5">
           <p class="text-xs font-extrabold text-ink/45">TRANH</p>
           <div class="mt-3 grid place-items-center rounded-2xl bg-mint p-6 text-center">
             <AppIcon icon="solar:gallery-round-bold" :size="28" />
             <p class="mt-2 text-xs leading-5 text-ink/55">{{ photoCaptionOf(currentGroup) }}</p>
           </div>
-          <p class="mt-3 text-[11px] leading-5 text-ink/45">Ảnh gốc chưa được gắn vào nhóm; admin upload và gắn ở màn Media là hiện đúng tranh.</p>
+          <p class="mt-3 text-[11px] leading-5 text-ink/45">Ảnh gốc chưa được gắn vào nhóm; admin gắn ảnh ở màn Đề thi là hiện đúng tranh.</p>
         </section>
 
         <section v-for="(passage, position) in passagesOf(currentGroup)" :key="position" class="rounded-[22px] border border-line p-5">
