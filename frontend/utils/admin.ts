@@ -13,6 +13,7 @@ export const adminSections: ReadonlyArray<AdminSection> = [
   { key: 'exams', label: 'Đề thi', detail: 'Dựng đề theo section', icon: 'solar:clipboard-list-bold', to: '/admin/exams' },
   { key: 'imports', label: 'Import', detail: 'Nhập content theo batch', icon: 'solar:cloud-upload-bold', to: '/admin/imports' },
   { key: 'writing', label: 'Writing review', detail: 'Chấm bài đang chờ', icon: 'solar:pen-new-square-bold', to: '/admin/writing' },
+  { key: 'ai', label: 'AI providers', detail: 'Chuỗi model và dự phòng', icon: 'solar:cpu-bolt-bold', to: '/admin/ai' },
   { key: 'users', label: 'Người dùng', detail: 'Quyền và trạng thái', icon: 'solar:users-group-rounded-bold', to: '/admin/users' },
   { key: 'audit', label: 'Audit', detail: 'Dấu vết vận hành', icon: 'solar:document-text-bold', to: '/admin/audit' }
 ];

@@ -1,4 +1,5 @@
 import { hasAdminAccess } from '~/utils/admin';
+import { isAuthRejection, resolveSignedIn } from '~/utils/session';
 
 export type SessionUser = {
   id: string;
@@ -17,14 +18,18 @@ export function useSession() {
   const user = useState<SessionUser | null>('session-user', () => null);
   const loaded = useState<boolean>('session-user-loaded', () => false);
 
-  const signedIn = computed(() => Boolean(accessToken.value));
+  const signedIn = computed(() => resolveSignedIn({ loaded: loaded.value, hasToken: Boolean(accessToken.value), hasUser: Boolean(user.value) }));
   const isAdmin = computed(() => hasAdminAccess(user.value?.roles));
   const initial = computed(() => (user.value?.displayName || 'Đ').trim().slice(0, 1).toUpperCase());
 
   async function load() {
     if (!accessToken.value) { user.value = null; loaded.value = true; return; }
     try { user.value = await request<SessionUser>('/users/me'); }
-    catch { user.value = null; }
+    catch (error) {
+      user.value = null;
+      // Keep a token the server merely could not be reached about; drop one it refused.
+      if (isAuthRejection(error)) accessToken.value = null;
+    }
     finally { loaded.value = true; }
   }
 

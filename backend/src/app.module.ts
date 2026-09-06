@@ -17,6 +17,7 @@ import { AccountModule } from './account/account.module';
 import { BillingModule } from './billing/billing.module';
 import { ContentModule } from './content/content.module';
 import { PracticeModule } from './practice/practice.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -35,7 +36,8 @@ import { PracticeModule } from './practice/practice.module';
     AccountModule,
     BillingModule,
     ContentModule,
-    PracticeModule
+    PracticeModule,
+    AiModule
   ]
 })
 export class AppModule {}

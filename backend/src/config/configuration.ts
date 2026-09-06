@@ -9,6 +9,11 @@ export default () => ({
     refreshTtlDays: Number(process.env.JWT_REFRESH_TTL_DAYS ?? 30)
   },
   appOrigin: process.env.APP_ORIGIN ?? 'http://localhost:3011',
+  ai: {
+    // 32 bytes as hex or base64. Provider API keys are encrypted with this and are unreadable
+    // without it, so rotating it means re-entering every provider key.
+    encryptionKey: process.env.AI_ENCRYPTION_KEY
+  },
   storage: {
     provider: process.env.STORAGE_PROVIDER ?? 'local',
     bucket: process.env.STORAGE_BUCKET ?? 'toeic-web',

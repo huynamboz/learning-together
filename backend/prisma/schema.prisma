@@ -111,6 +111,13 @@ enum QuestionGroupType {
   PASSAGE_SET
 }
 
+/// Result of the most recent call to a provider, so operators can see which one is failing.
+enum AiProviderHealth {
+  UNKNOWN
+  HEALTHY
+  FAILING
+}
+
 /// Whether a paper may be published at all: restricted material stays internal.
 enum ContentLicense {
   ORIGINAL
@@ -986,4 +993,35 @@ model WithdrawalRequest {
   processedAt    DateTime?
 
   @@index([userId, status, createdAt])
+}
+
+/// A configured AI endpoint. Several may exist at once; the gateway tries them in priority order.
+model AiProvider {
+  id            String           @id @default(uuid()) @db.Uuid
+  name          String           @db.VarChar(120)
+  /// OpenAI-compatible base, e.g. https://api.openai.com/v1
+  baseUrl       String           @db.VarChar(500)
+  model         String           @db.VarChar(180)
+  /// AES-256-GCM ciphertext. The plaintext key never leaves the server and is never returned.
+  apiKeyCipher  String
+  /// Last four characters, purely so an operator can tell two keys apart in the console.
+  apiKeyLast4   String           @db.VarChar(8)
+  enabled       Boolean          @default(true)
+  /// Lower is tried first.
+  priority      Int
+  timeoutMs     Int              @default(30000)
+  /// Extra attempts against this same provider before moving to the next one.
+  maxRetries    Int              @default(1)
+  /// Extra headers a gateway may require, e.g. an org id. Never holds credentials.
+  extraHeaders  Json?
+  health        AiProviderHealth @default(UNKNOWN)
+  lastCheckedAt DateTime?
+  lastLatencyMs Int?
+  /// Message from the last failure, already stripped of anything key-shaped.
+  lastError     String?          @db.VarChar(500)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([priority])
+  @@index([enabled, priority])
 }

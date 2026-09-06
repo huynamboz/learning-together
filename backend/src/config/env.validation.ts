@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { readEncryptionKey } from '@/ai/secret-box';
 
 export const envValidationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'staging', 'production').default('development'),
@@ -19,7 +20,18 @@ export const envValidationSchema = Joi.object({
   STORAGE_R2_ACCOUNT_ID: Joi.string().allow('').optional(),
   STORAGE_R2_ENDPOINT: Joi.string().uri().allow('').optional(),
   STORAGE_R2_ACCESS_KEY_ID: Joi.string().allow('').optional(),
-  STORAGE_R2_SECRET_ACCESS_KEY: Joi.string().allow('').optional()
+  STORAGE_R2_SECRET_ACCESS_KEY: Joi.string().allow('').optional(),
+  // Optional so a deployment that never calls a model still boots; a bad value fails here rather
+  // than the first time an operator tries to save a provider key.
+  AI_ENCRYPTION_KEY: Joi.string().allow('').optional().custom((value, helpers) => {
+    if (!value) return value;
+    try {
+      readEncryptionKey(value);
+      return value;
+    } catch (error) {
+      return helpers.error('any.custom', { message: error instanceof Error ? error.message : 'AI_ENCRYPTION_KEY không hợp lệ.' });
+    }
+  })
 }).custom((value, helpers) => {
   if (value.STORAGE_PROVIDER === 'local') return value;
   const isR2 = value.STORAGE_PROVIDER === 'r2';
