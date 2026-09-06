@@ -319,12 +319,11 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 
 .hub-nav button {
   border-radius: 14px;
-  border-left: 4px solid transparent;
   min-height: 3.9rem;
 }
 
 .hub-nav button:hover { background: #f1faee !important; }
-.hub-nav button[class*="bg-[#E7F7F1]"] { border-left-color: var(--hub-green); background: var(--hub-mint) !important; }
+.hub-nav button[class*="bg-[#E7F7F1]"] { background: var(--hub-mint) !important; }
 .hub-nav button[class*="bg-[#E7F7F1]"] span:first-child { background: var(--hub-green) !important; }
 
 .hub-panel {
