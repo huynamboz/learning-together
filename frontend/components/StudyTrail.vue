@@ -8,7 +8,7 @@ defineProps<{ current: number; total: number; label: string }>();
     <div class="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
       <div class="max-w-xl">
         <div class="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-bean"><span class="h-2 w-2 rounded-full bg-bean" /> Hành trình hôm nay</div>
-        <h1 class="max-w-[620px] text-[clamp(2rem,4vw,3.5rem)] font-extrabold leading-[1.05] tracking-[-0.06em]">Nam, mình học tiếp một nhịp nhé.</h1>
+        <h1 class="max-w-[620px] text-[clamp(2rem,4vw,3.5rem)] font-extrabold leading-[1.05] tracking-[-0.06em]">Mình học tiếp một nhịp nhé.</h1>
         <p class="mt-4 max-w-[440px] text-sm leading-6 text-white/65">{{ label }} — một phiên ngắn cũng đủ giữ đường tiến bộ không bị đứt.</p>
       </div>
       <div class="relative min-w-[260px] lg:w-[370px]">

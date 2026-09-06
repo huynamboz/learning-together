@@ -3,11 +3,12 @@ import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { AuthenticatedRequest } from '@/access/roles.guard';
 import { RecordAttemptDto, RecordStudySessionDto } from './learning.dto';
 import { LearningService } from './learning.service';
+import { DashboardService } from './dashboard.service';
 
 @Controller('learning')
 @UseGuards(JwtAuthGuard)
 export class LearningController {
-  constructor(private readonly service: LearningService) {}
+  constructor(private readonly service: LearningService, private readonly dashboard: DashboardService) {}
 
   @Post('attempts')
   record(@Req() request: AuthenticatedRequest, @Body() dto: RecordAttemptDto) { return this.service.recordAttempt(request.user!.id, dto); }
@@ -17,4 +18,7 @@ export class LearningController {
 
   @Get('progress')
   getProgress(@Req() request: AuthenticatedRequest) { return this.service.progress(request.user!.id); }
+
+  @Get('dashboard')
+  dashboardSnapshot(@Req() request: AuthenticatedRequest) { return this.dashboard.snapshot(request.user!.id); }
 }

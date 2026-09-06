@@ -1,20 +1,31 @@
 <script setup lang="ts">
-const settingsOpen = ref(false);
-const goals = [
-  { label: 'Đọc', value: '0 / 30 câu', color: 'bg-iris', icon: '▦' },
-  { label: 'Nghe', value: '0 / 30 câu', color: 'bg-leaf', icon: '◌' },
-  { label: 'Từ vựng', value: '0 / 20 từ', color: 'bg-bean', icon: '▤' },
-  { label: 'Luyện đề', value: '0 / 40 câu', color: 'bg-ink', icon: '▥' },
-  { label: 'Video', value: '0 / 2 bài', color: 'bg-[#D783B8]', icon: '▷' }
-];
+type Goal = { key: string; label: string; target: number; achieved: number; unit: string; icon: string; tone: 'leaf' | 'iris' | 'bean' | 'ink' | 'pink'; to: string };
+
+defineProps<{ goals: Goal[]; loading?: boolean }>();
+
+function valueLabel(goal: Goal) {
+  if (goal.unit === 'giây') return `${Math.floor(goal.achieved / 60)} / ${Math.floor(goal.target / 60)} phút`;
+  return `${goal.achieved} / ${goal.target} ${goal.unit}`;
+}
+
+function width(goal: Goal) { return `${Math.min(100, Math.round((goal.achieved / goal.target) * 100))}%`; }
+
+function toneClass(tone: Goal['tone']) {
+  return { leaf: 'bg-leaf', iris: 'bg-iris', bean: 'bg-bean', ink: 'bg-ink', pink: 'bg-[#D783B8]' }[tone];
+}
 </script>
 
 <template>
   <section class="rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-6">
-    <div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold text-ink/45">NHỊP HỌC</p><h2 class="mt-1 text-xl font-extrabold tracking-[-0.04em]">Mục tiêu hôm nay</h2></div><button class="rounded-lg px-2 py-1 text-xs font-bold text-iris hover:bg-iris/5 focus-ring" :aria-expanded="settingsOpen" @click="settingsOpen = !settingsOpen">Cài đặt</button></div>
-    <div v-if="settingsOpen" class="mt-4 rounded-2xl bg-paper p-4" role="status"><p class="text-xs font-bold">Mục tiêu mặc định</p><p class="mt-1 text-xs leading-5 text-ink/55">30 câu nghe · 30 câu đọc · 20 từ · 40 câu đề · 2 video. Tuỳ chỉnh sẽ được lưu khi có tài khoản.</p></div>
-    <div class="mt-6 space-y-4">
-      <div v-for="goal in goals" :key="goal.label" class="flex items-center gap-3"><span :class="['grid h-9 w-9 place-items-center rounded-xl text-sm text-white', goal.color]">{{ goal.icon }}</span><div class="min-w-0 flex-1"><div class="flex justify-between gap-2 text-xs font-bold"><span>{{ goal.label }}</span><span class="text-ink/45">{{ goal.value }}</span></div><div class="mt-2 h-1.5 rounded-full bg-paper"><div class="h-full w-0 rounded-full" :class="goal.color" /></div></div></div>
+    <div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold text-ink/45">NHỊP HỌC</p><h2 class="mt-1 text-xl font-extrabold tracking-[-0.04em]">Mục tiêu hôm nay</h2></div><span class="rounded-lg bg-paper px-2 py-1 text-[11px] font-bold text-ink/45">UTC</span></div>
+    <p class="mt-3 text-xs leading-5 text-ink/55">Mục tiêu mặc định được tính từ hoạt động đã lưu, không phải số ước lượng.</p>
+    <div v-if="loading" class="mt-6 rounded-2xl bg-paper p-4 text-xs text-ink/55">Đang tính nhịp học hôm nay...</div>
+    <div v-else-if="goals.length" class="mt-6 space-y-4">
+      <NuxtLink v-for="goal in goals" :key="goal.key" :to="goal.to" class="group flex items-center gap-3 rounded-xl p-1 transition hover:bg-paper focus-ring">
+        <span :class="['grid h-9 w-9 place-items-center rounded-xl text-sm text-white', toneClass(goal.tone)]">{{ goal.icon }}</span>
+        <span class="min-w-0 flex-1"><span class="flex justify-between gap-2 text-xs font-bold"><span>{{ goal.label }}</span><span class="text-ink/45">{{ valueLabel(goal) }}</span></span><span class="mt-2 block h-1.5 overflow-hidden rounded-full bg-paper"><span :class="['block h-full rounded-full transition-all', toneClass(goal.tone)]" :style="{ width: width(goal) }" /></span></span>
+      </NuxtLink>
     </div>
+    <p v-else-if="!loading" class="mt-6 rounded-2xl bg-paper p-4 text-xs leading-5 text-ink/55">Đăng nhập để xem mục tiêu theo hoạt động của bạn.</p>
   </section>
 </template>
