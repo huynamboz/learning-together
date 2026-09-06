@@ -5,11 +5,11 @@ import { PrismaService } from '@/database/prisma.service';
 const DAY_MS = 86400000;
 
 const goalDefinitions = [
-  { key: 'listening', label: 'Nghe', target: 1800, unit: 'giây', icon: '◌', tone: 'leaf', to: '/listen' },
-  { key: 'reading', label: 'Đọc', target: 30, unit: 'câu', icon: '▦', tone: 'iris', to: '/read' },
-  { key: 'vocabulary', label: 'Từ vựng', target: 20, unit: 'thẻ', icon: '▤', tone: 'bean', to: '/vocabulary' },
-  { key: 'mock-test', label: 'Luyện đề', target: 40, unit: 'câu', icon: '▥', tone: 'ink', to: '/mock-test' },
-  { key: 'video', label: 'Video', target: 1200, unit: 'giây', icon: '▷', tone: 'pink', to: '/video' }
+  { key: 'listening', label: 'Nghe', target: 1800, unit: 'giây', icon: 'solar:headphones-round-sound-bold', tone: 'leaf', to: '/listen' },
+  { key: 'reading', label: 'Đọc', target: 30, unit: 'câu', icon: 'solar:book-2-bold', tone: 'iris', to: '/read' },
+  { key: 'vocabulary', label: 'Từ vựng', target: 20, unit: 'thẻ', icon: 'solar:book-bookmark-bold', tone: 'bean', to: '/vocabulary' },
+  { key: 'mock-test', label: 'Luyện đề', target: 40, unit: 'câu', icon: 'solar:clipboard-list-bold', tone: 'ink', to: '/mock-test' },
+  { key: 'video', label: 'Video', target: 1200, unit: 'giây', icon: 'solar:play-circle-bold', tone: 'pink', to: '/video' }
 ] as const;
 
 type GoalKey = (typeof goalDefinitions)[number]['key'];

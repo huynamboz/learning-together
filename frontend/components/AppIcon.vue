@@ -2,34 +2,42 @@
 import { Icon } from '@iconify/vue';
 import type { IconifyIcon } from '@iconify/types';
 import solarArrowLeft from '@iconify-icons/solar/arrow-left-linear';
+import solarArrowRightUp from '@iconify-icons/solar/arrow-right-up-linear';
 import solarBell from '@iconify-icons/solar/bell-bing-bold';
 import solarBook from '@iconify-icons/solar/book-2-bold';
 import solarBookmark from '@iconify-icons/solar/book-bookmark-bold';
 import solarChat from '@iconify-icons/solar/chat-round-dots-bold';
+import solarCheckCircle from '@iconify-icons/solar/check-circle-bold';
 import solarClipboard from '@iconify-icons/solar/clipboard-list-bold';
+import solarClose from '@iconify-icons/solar/close-circle-bold';
 import solarCup from '@iconify-icons/solar/cup-star-bold';
 import solarHeadphones from '@iconify-icons/solar/headphones-round-sound-bold';
 import solarLock from '@iconify-icons/solar/lock-keyhole-minimalistic-bold';
 import solarPen from '@iconify-icons/solar/pen-new-square-bold';
 import solarPlay from '@iconify-icons/solar/play-circle-bold';
 import solarShare from '@iconify-icons/solar/share-bold';
+import solarUpload from '@iconify-icons/solar/upload-minimalistic-bold';
 import solarUser from '@iconify-icons/solar/user-circle-bold-duotone';
 import tablerDevices from '@iconify-icons/tabler/devices';
 import tablerMessages from '@iconify-icons/tabler/messages';
 
 const iconMap: Record<string, IconifyIcon> = {
   'solar:arrow-left-linear': solarArrowLeft,
+  'solar:arrow-right-up-linear': solarArrowRightUp,
   'solar:bell-bing-bold': solarBell,
   'solar:book-2-bold': solarBook,
   'solar:book-bookmark-bold': solarBookmark,
   'solar:chat-round-dots-bold': solarChat,
+  'solar:check-circle-bold': solarCheckCircle,
   'solar:clipboard-list-bold': solarClipboard,
+  'solar:close-circle-bold': solarClose,
   'solar:cup-star-bold': solarCup,
   'solar:headphones-round-sound-bold': solarHeadphones,
   'solar:lock-keyhole-minimalistic-bold': solarLock,
   'solar:pen-new-square-bold': solarPen,
   'solar:play-circle-bold': solarPlay,
   'solar:share-bold': solarShare,
+  'solar:upload-minimalistic-bold': solarUpload,
   'solar:user-circle-bold-duotone': solarUser,
   'tabler:devices': tablerDevices,
   'tabler:messages': tablerMessages

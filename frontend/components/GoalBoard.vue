@@ -22,7 +22,7 @@ function toneClass(tone: Goal['tone']) {
     <div v-if="loading" class="mt-6 rounded-2xl bg-paper p-4 text-xs text-ink/55">Đang tính nhịp học hôm nay...</div>
     <div v-else-if="goals.length" class="mt-6 space-y-4">
       <NuxtLink v-for="goal in goals" :key="goal.key" :to="goal.to" class="group flex items-center gap-3 rounded-xl p-1 transition hover:bg-paper focus-ring">
-        <span :class="['grid h-9 w-9 place-items-center rounded-xl text-sm text-white', toneClass(goal.tone)]">{{ goal.icon }}</span>
+        <span :class="['grid h-9 w-9 place-items-center rounded-xl text-white', toneClass(goal.tone)]"><AppIcon :icon="goal.icon" :size="20" /></span>
         <span class="min-w-0 flex-1"><span class="flex justify-between gap-2 text-xs font-bold"><span>{{ goal.label }}</span><span class="text-ink/45">{{ valueLabel(goal) }}</span></span><span class="mt-2 block h-1.5 overflow-hidden rounded-full bg-paper"><span :class="['block h-full rounded-full transition-all', toneClass(goal.tone)]" :style="{ width: width(goal) }" /></span></span>
       </NuxtLink>
     </div>
