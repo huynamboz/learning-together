@@ -285,7 +285,14 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 .hub-page :is(.bg-white) { background-color: transparent !important; }
 .hub-page :is(.bg-paper) { background-color: var(--hub-mint) !important; }
 .hub-page :is(input, textarea) { border-color: #bfe3c7 !important; background: #fff !important; }
-.hub-page :is(input, textarea):focus { border-color: var(--hub-green) !important; box-shadow: 0 0 0 3px rgba(88, 204, 2, .15); }
+.hub-page :is(input, textarea):focus,
+.hub-page :is(input, textarea):focus-visible {
+  border-width: 1px !important;
+  border-color: #8bd85e !important;
+  outline: 2px solid rgba(88, 204, 2, .22) !important;
+  outline-offset: 1px !important;
+  box-shadow: none !important;
+}
 .hub-page :is(.text-ink\/45, .text-ink\/50, .text-ink\/55, .text-ink\/60, .text-ink\/65) { color: rgba(38, 50, 56, .68) !important; }
 
 .hub-hero {
