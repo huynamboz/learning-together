@@ -33,7 +33,7 @@ const inputAttrs = computed(() => {
 </script>
 
 <template>
-  <div class="app-input-field">
+  <div class="app-input-field" :class="attrs.class" :style="attrs.style">
     <label v-if="label" :for="inputId" class="mb-2 block text-xs font-extrabold text-ink/60">{{ label }}</label>
     <input
       :id="inputId"
