@@ -9,8 +9,13 @@ import {
   CreateGroupQuestionDto,
   CreateMockTestDto,
   CreateSectionDto,
+  ImportPaperDto,
+  ReorderGroupsDto,
   ReplaceConversionsDto,
-  UpdateGroupDto
+  UpdateGroupDto,
+  UpdateGroupQuestionDto,
+  UpdateMockTestDto,
+  UpdateSectionDto
 } from './exam-builder.dto';
 import { ExamBuilderService } from './exam-builder.service';
 
@@ -42,9 +47,49 @@ export class ExamBuilderController {
     return this.service.addGroup(testId, request.user!.id, dto);
   }
 
+  @Post(':testId/import')
+  importPaper(@Req() request: AuthenticatedRequest, @Param('testId') testId: string, @Body() dto: ImportPaperDto) {
+    return this.service.importPaper(testId, request.user!.id, dto);
+  }
+
   @Put(':testId/conversions')
   replaceConversions(@Req() request: AuthenticatedRequest, @Param('testId') testId: string, @Body() dto: ReplaceConversionsDto) {
     return this.service.replaceConversions(testId, request.user!.id, dto);
+  }
+
+  @Patch(':testId')
+  updateTest(@Req() request: AuthenticatedRequest, @Param('testId') testId: string, @Body() dto: UpdateMockTestDto) {
+    return this.service.updateTest(testId, request.user!.id, dto);
+  }
+
+  @Patch('sections/:sectionId')
+  updateSection(@Req() request: AuthenticatedRequest, @Param('sectionId') sectionId: string, @Body() dto: UpdateSectionDto) {
+    return this.service.updateSection(sectionId, request.user!.id, dto);
+  }
+
+  @Delete('sections/:sectionId')
+  deleteSection(@Req() request: AuthenticatedRequest, @Param('sectionId') sectionId: string) {
+    return this.service.deleteSection(sectionId, request.user!.id);
+  }
+
+  @Put('sections/:sectionId/group-order')
+  reorderGroups(@Req() request: AuthenticatedRequest, @Param('sectionId') sectionId: string, @Body() dto: ReorderGroupsDto) {
+    return this.service.reorderGroups(sectionId, request.user!.id, dto);
+  }
+
+  @Delete('groups/:groupId')
+  deleteGroup(@Req() request: AuthenticatedRequest, @Param('groupId') groupId: string) {
+    return this.service.deleteGroup(groupId, request.user!.id);
+  }
+
+  @Patch('questions/:questionId')
+  updateQuestion(@Req() request: AuthenticatedRequest, @Param('questionId') questionId: string, @Body() dto: UpdateGroupQuestionDto) {
+    return this.service.updateQuestion(questionId, request.user!.id, dto);
+  }
+
+  @Delete('questions/:questionId')
+  deleteQuestion(@Req() request: AuthenticatedRequest, @Param('questionId') questionId: string) {
+    return this.service.deleteQuestion(questionId, request.user!.id);
   }
 
   @Patch('groups/:groupId')

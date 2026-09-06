@@ -7,12 +7,13 @@ import { formatDateTime } from '~/utils/admin';
 definePageMeta({ layout: 'admin' });
 
 type MediaAsset = { id: string; originalName: string; mimeType: string; status: string; visibility: 'public' | 'private' };
-type TestRow = { id: string; slug: string; title: string; durationMin: number; status: string; updatedAt: string; questionCount: number; conversionCount: number; sections: Array<{ id: string; kind: ExamSectionKind; label: string; durationMin: number; sortOrder: number }> };
+type License = 'ORIGINAL' | 'LICENSED' | 'RESTRICTED';
+type TestRow = { id: string; slug: string; title: string; durationMin: number; status: string; source: string | null; license: License; updatedAt: string; questionCount: number; conversionCount: number; sections: Array<{ id: string; kind: ExamSectionKind; label: string; durationMin: number; sortOrder: number }> };
 type GroupQuestion = { id: string; kind: string; prompt: Record<string, unknown>; answerKey: string | null; numberInTest: number | null; optionsHidden: boolean; options: Array<{ key: string; text: Record<string, unknown> }> };
 type GroupMedia = { assetId: string; role: string; caption: string | null; sortOrder: number; asset: { originalName: string; mimeType: string; status: string; visibility: string } };
 type Group = { id: string; type: QuestionGroupType; part: number; sortOrder: number; stimulus: Record<string, unknown>; transcript: string | null; audioAssetId: string | null; audioStartSec: number | null; audioEndSec: number | null; media: GroupMedia[]; questions: GroupQuestion[] };
 type Section = { id: string; kind: ExamSectionKind; label: string; durationMin: number; sortOrder: number; groups: Group[] };
-type TestDetail = { id: string; slug: string; title: string; durationMin: number; status: string; sections: Section[]; conversions: Array<{ section: ExamSectionKind; rawCorrect: number; scaled: number }> };
+type TestDetail = { id: string; slug: string; title: string; durationMin: number; status: string; source: string | null; license: License; sections: Section[]; conversions: Array<{ section: ExamSectionKind; rawCorrect: number; scaled: number }> };
 
 const { request } = useAppApi();
 const { canAccess, ensureConsole } = useAdminConsole();
@@ -33,6 +34,12 @@ const draftTest = reactive({ title: '', slug: '', durationMin: 120 });
 const draftSection = reactive({ kind: 'LISTENING' as ExamSectionKind, label: 'Listening', durationMin: 45 });
 const draftGroup = reactive({ sectionId: '', type: 'PHOTO' as QuestionGroupType });
 const draftQuestion = reactive({ prompt: '', numberInTest: null as number | null, answerKey: 'A', explanation: '', options: ['', '', '', ''] });
+const editingQuestionId = ref('');
+const settings = reactive({ title: '', durationMin: 120, source: '', license: 'ORIGINAL' as License });
+const sectionEdits = reactive<Record<string, { label: string; durationMin: number }>>({});
+const importText = ref('');
+const importReport = ref<{ applied: boolean; dryRun: boolean; counts: Record<string, number>; issues: Array<{ path: string; message: string }> } | null>(null);
+const importReplace = ref(false);
 
 const selectedGroup = computed(() => detail.value?.sections.flatMap((section) => section.groups).find((group) => group.id === selectedGroupId.value) ?? null);
 const selectedGroupSpec = computed(() => selectedGroup.value ? groupTypeOption(selectedGroup.value.type) : null);
@@ -67,6 +74,11 @@ async function openTest(testId: string) {
     detail.value = await request<TestDetail>(`/admin/exams/${testId}`);
     conversionText.value = serialiseConversionTable(detail.value.conversions);
     draftGroup.sectionId = detail.value.sections[0]?.id ?? '';
+    settings.title = detail.value.title;
+    settings.durationMin = detail.value.durationMin;
+    settings.source = detail.value.source ?? '';
+    settings.license = detail.value.license;
+    for (const section of detail.value.sections) sectionEdits[section.id] = { label: section.label, durationMin: section.durationMin };
   } catch { toast.error('Không mở được đề', 'Hãy tải lại danh sách rồi thử lại.'); }
   finally { detailLoading.value = false; }
 }
@@ -90,6 +102,7 @@ function selectGroup(group: Group) {
 
 function resetQuestionDraft(group: Group) {
   const spec = groupTypeOption(group.type);
+  editingQuestionId.value = '';
   draftQuestion.prompt = '';
   draftQuestion.numberInTest = null;
   draftQuestion.answerKey = spec.optionKeys[0];
@@ -203,6 +216,23 @@ async function addQuestion() {
   if (options.some((option) => !option.text)) { toast.error('Thiếu lựa chọn', `Nhóm này cần đủ ${spec.optionKeys.length} phương án.`); return; }
   busy.value = true;
   try {
+    if (editingQuestionId.value) {
+      await request(`/admin/exams/questions/${editingQuestionId.value}`, {
+        method: 'PATCH',
+        body: {
+          prompt: draftQuestion.prompt.trim(),
+          answerKey: draftQuestion.answerKey,
+          explanation: draftQuestion.explanation.trim() || undefined,
+          numberInTest: draftQuestion.numberInTest ?? undefined,
+          options
+        }
+      });
+      toast.success('Đã lưu câu hỏi');
+      await Promise.all([openTest(detail.value!.id), loadTests()]);
+      selectedGroupId.value = group.id;
+      resetQuestionDraft(group);
+      return;
+    }
     await request(`/admin/exams/groups/${group.id}/questions`, {
       method: 'POST',
       body: {
@@ -220,6 +250,135 @@ async function addQuestion() {
     selectedGroupId.value = group.id;
     resetQuestionDraft(group);
   } catch { toast.error('Chưa thêm được câu hỏi', 'Đáp án đúng phải nằm trong danh sách phương án.'); }
+  finally { busy.value = false; }
+}
+
+async function saveSettings() {
+  if (!detail.value || busy.value) return;
+  busy.value = true;
+  try {
+    await request(`/admin/exams/${detail.value.id}`, { method: 'PATCH', body: { title: settings.title.trim(), durationMin: settings.durationMin, source: settings.source.trim(), license: settings.license } });
+    toast.success('Đã lưu thông tin đề', settings.license === 'RESTRICTED' ? 'Đề hạn chế bản quyền đã được đưa về nháp và không thể publish.' : 'Nguồn và bản quyền đã được ghi lại.');
+    await Promise.all([openTest(detail.value.id), loadTests()]);
+  } catch { toast.error('Chưa lưu được thông tin đề', 'Kiểm tra tên và thời lượng rồi thử lại.'); }
+  finally { busy.value = false; }
+}
+
+async function saveSection(section: Section) {
+  const edit = sectionEdits[section.id];
+  if (!edit || busy.value) return;
+  busy.value = true;
+  try {
+    await request(`/admin/exams/sections/${section.id}`, { method: 'PATCH', body: { label: edit.label.trim(), durationMin: edit.durationMin } });
+    toast.success('Đã lưu section', `${edit.label} · ${edit.durationMin} phút.`);
+    await Promise.all([openTest(detail.value!.id), loadTests()]);
+  } catch { toast.error('Chưa lưu được section', 'Kiểm tra nhãn và thời lượng rồi thử lại.'); }
+  finally { busy.value = false; }
+}
+
+function removeSection(section: Section) {
+  const questionCount = section.groups.reduce((total, group) => total + group.questions.length, 0);
+  return confirm({
+    title: `Xoá section “${section.label}”?`,
+    description: `${section.groups.length} nhóm và ${questionCount} câu hỏi trong section sẽ bị xoá theo. Không khôi phục được.`,
+    confirmLabel: 'Xoá section',
+    cancelLabel: 'Giữ lại',
+    tone: 'danger'
+  }, async () => {
+    try {
+      await request(`/admin/exams/sections/${section.id}`, { method: 'DELETE' });
+      toast.success('Đã xoá section', `${questionCount} câu hỏi đã được gỡ khỏi đề.`);
+      await Promise.all([openTest(detail.value!.id), loadTests()]);
+    } catch { toast.error('Chưa xoá được section', 'Hãy tải lại đề rồi thử lại.'); }
+  });
+}
+
+function removeGroup(group: Group) {
+  return confirm({
+    title: `Xoá nhóm ${groupTypeOption(group.type).label}?`,
+    description: `${group.questions.length} câu hỏi trong nhóm sẽ bị xoá theo. Ảnh và audio vẫn nằm trong media library.`,
+    confirmLabel: 'Xoá nhóm',
+    cancelLabel: 'Giữ lại',
+    tone: 'danger'
+  }, async () => {
+    try {
+      await request(`/admin/exams/groups/${group.id}`, { method: 'DELETE' });
+      toast.success('Đã xoá nhóm');
+      await Promise.all([openTest(detail.value!.id), loadTests()]);
+    } catch { toast.error('Chưa xoá được nhóm', 'Hãy tải lại đề rồi thử lại.'); }
+  });
+}
+
+/** Moves one group within its section; the API takes the whole order so nothing can drift. */
+async function moveGroup(section: Section, group: Group, step: -1 | 1) {
+  const order = section.groups.map((item) => item.id);
+  const from = order.indexOf(group.id);
+  const to = from + step;
+  if (from < 0 || to < 0 || to >= order.length || busy.value) return;
+  order.splice(to, 0, ...order.splice(from, 1));
+  busy.value = true;
+  try {
+    await request(`/admin/exams/sections/${section.id}/group-order`, { method: 'PUT', body: { groupIds: order } });
+    await openTest(detail.value!.id);
+    selectedGroupId.value = group.id;
+  } catch { toast.error('Chưa đổi được thứ tự', 'Hãy tải lại đề rồi thử lại.'); }
+  finally { busy.value = false; }
+}
+
+function editQuestion(question: GroupQuestion) {
+  if (!selectedGroupSpec.value) return;
+  editingQuestionId.value = question.id;
+  draftQuestion.prompt = promptText(question.prompt);
+  draftQuestion.numberInTest = question.numberInTest;
+  draftQuestion.answerKey = question.answerKey ?? selectedGroupSpec.value.optionKeys[0];
+  draftQuestion.explanation = '';
+  draftQuestion.options = selectedGroupSpec.value.optionKeys.map((key) => promptText(question.options.find((option) => option.key === key)?.text ?? {}));
+}
+
+function removeQuestion(question: GroupQuestion) {
+  const groupId = selectedGroupId.value;
+  return confirm({
+    title: `Xoá câu ${question.numberInTest ?? ''}?`.replace(' ?', '?'),
+    description: 'Câu hỏi sẽ bị gỡ khỏi nhóm và khỏi đề. Không khôi phục được.',
+    confirmLabel: 'Xoá câu hỏi',
+    cancelLabel: 'Giữ lại',
+    tone: 'danger'
+  }, async () => {
+    try {
+      await request(`/admin/exams/questions/${question.id}`, { method: 'DELETE' });
+      toast.success('Đã xoá câu hỏi');
+      await Promise.all([openTest(detail.value!.id), loadTests()]);
+      selectedGroupId.value = groupId;
+    } catch { toast.error('Chưa xoá được câu hỏi', 'Hãy tải lại đề rồi thử lại.'); }
+  });
+}
+
+async function runImport(dryRun: boolean) {
+  if (!detail.value || busy.value) return;
+  let payload: { sections?: unknown[]; conversions?: unknown[] };
+  try {
+    const parsed: unknown = JSON.parse(importText.value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not-object');
+    payload = parsed as { sections?: unknown[]; conversions?: unknown[] };
+    if (!Array.isArray(payload.sections)) throw new Error('no-sections');
+  } catch {
+    importReport.value = { applied: false, dryRun: true, counts: {}, issues: [{ path: 'manifest', message: 'Manifest phải là một JSON object có mảng "sections".' }] };
+    toast.error('Manifest không đọc được', 'Cần một JSON object có mảng "sections".');
+    return;
+  }
+  busy.value = true;
+  try {
+    importReport.value = await request(`/admin/exams/${detail.value.id}/import`, {
+      method: 'POST',
+      body: { dryRun, replaceExisting: importReplace.value, sections: payload.sections, conversions: payload.conversions }
+    });
+    const report = importReport.value!;
+    if (report.issues.length) toast.error(`Manifest có ${report.issues.length} lỗi`, 'Sửa theo danh sách bên dưới rồi chạy lại.');
+    else if (report.applied) {
+      toast.success('Đã import đề', `${report.counts.sections} section · ${report.counts.groups} nhóm · ${report.counts.questions} câu.`);
+      await Promise.all([openTest(detail.value.id), loadTests()]);
+    } else toast.success('Manifest hợp lệ', `Sẵn sàng ghi ${report.counts.questions} câu. Bấm “Import thật” để áp dụng.`);
+  } catch { toast.error('Chưa chạy được import', 'Kiểm tra kết nối và quyền rồi thử lại.'); }
   finally { busy.value = false; }
 }
 
@@ -269,6 +428,7 @@ onMounted(async () => { await ensureConsole(); await Promise.all([loadTests(), l
           <span class="rounded-2xl bg-azure px-4 py-3 text-center"><span class="block text-[11px] font-bold text-ink/50">Ảnh dùng được</span><span class="mt-0.5 block text-lg font-black text-[#1288C8]">{{ imageAssets.length }}</span></span>
         </div>
       </template>
+
     </AdminPageHeader>
 
     <div class="grid gap-5 lg:grid-cols-[.65fr_1.35fr] lg:items-start">
@@ -323,6 +483,25 @@ onMounted(async () => { await ensureConsole(); await Promise.all([loadTests(), l
               <button class="cta-grass px-4 py-2.5 text-xs font-extrabold disabled:opacity-40 focus-ring" :disabled="busy || !questionTotal" @click="publish">{{ detail.status === 'PUBLISHED' ? 'Publish lại' : 'Publish đề' }}</button>
             </div>
 
+            <div class="mt-5 grid gap-3 border-t border-line pt-5 sm:grid-cols-2">
+              <AppInput v-model="settings.title" label="Tên đề" aria-label="Tên đề" />
+              <AppInput v-model.number="settings.durationMin" label="Tổng thời gian (phút)" type="number" min="1" max="600" aria-label="Tổng thời gian" />
+              <AppInput v-model="settings.source" label="Nguồn" placeholder="VD: ETS official sample form ST-05" aria-label="Nguồn đề" />
+              <div>
+                <label class="mb-2 block text-xs font-extrabold text-ink/60" for="test-license">Bản quyền</label>
+                <AppSelect id="test-license" v-model="settings.license" class="w-full" aria-label="Bản quyền">
+                  <option value="ORIGINAL">Tự biên soạn</option>
+                  <option value="LICENSED">Đã có quyền sử dụng</option>
+                  <option value="RESTRICTED">Hạn chế — không publish</option>
+                </AppSelect>
+              </div>
+              <div class="sm:col-span-2 flex flex-wrap items-center gap-3">
+                <button class="cta-grass px-4 py-3 text-xs font-extrabold disabled:opacity-40 focus-ring" :disabled="busy || !settings.title.trim()" @click="saveSettings">Lưu thông tin đề</button>
+                <span v-if="settings.license === 'RESTRICTED'" class="text-xs font-bold text-[#B5473A]">Đề hạn chế bản quyền sẽ được đưa về nháp và không thể publish.</span>
+                <span v-else-if="!settings.source.trim()" class="text-xs text-ink/50">Ghi nguồn giúp biết đề nào tự soạn, đề nào lấy từ tài liệu bên ngoài.</span>
+              </div>
+            </div>
+
             <div class="mt-5 flex flex-wrap items-end gap-2 border-t border-line pt-5">
               <AppSelect v-model="draftSection.kind" class="w-full sm:w-auto" aria-label="Loại section">
                 <option value="LISTENING">Listening</option>
@@ -341,22 +520,36 @@ onMounted(async () => { await ensureConsole(); await Promise.all([loadTests(), l
                 <p class="text-xs font-extrabold text-iris">{{ sectionLabel(section.kind) }}</p>
                 <h3 class="mt-1 text-lg font-extrabold">{{ section.label }} · {{ section.durationMin }} phút</h3>
               </div>
-              <span class="rounded-lg bg-mint px-2 py-1 text-[11px] font-bold text-ink/55">{{ section.groups.length }} nhóm</span>
+              <div class="flex items-center gap-2">
+                <span class="rounded-lg bg-mint px-2 py-1 text-[11px] font-bold text-ink/55">{{ section.groups.length }} nhóm</span>
+                <button class="rounded-lg px-2 py-1 text-[11px] font-extrabold text-[#B5473A] hover:bg-blush focus-ring" :disabled="busy" @click="removeSection(section)">Xoá section</button>
+              </div>
+            </div>
+
+            <div v-if="sectionEdits[section.id]" class="mt-3 flex flex-wrap items-end gap-2">
+              <AppInput v-model="sectionEdits[section.id].label" class="min-w-[140px] flex-1" :aria-label="`Nhãn của ${section.label}`" />
+              <AppInput v-model.number="sectionEdits[section.id].durationMin" class="w-full sm:w-28" type="number" min="1" max="300" :aria-label="`Số phút của ${section.label}`" />
+              <button class="rounded-xl border border-line px-3 py-2.5 text-xs font-extrabold hover:bg-mint disabled:opacity-40 focus-ring" :disabled="busy" @click="saveSection(section)">Lưu section</button>
             </div>
 
             <ul v-if="section.groups.length" class="mt-4 space-y-2">
-              <li v-for="group in section.groups" :key="group.id">
-                <button :class="['w-full rounded-2xl border p-3.5 text-left transition focus-ring', selectedGroupId === group.id ? 'border-iris bg-azure' : 'border-line hover:bg-mint']" @click="selectGroup(group)">
-                  <div class="flex flex-wrap items-center justify-between gap-2">
+              <li v-for="(group, groupIndex) in section.groups" :key="group.id" :class="['group-row', selectedGroupId === group.id ? 'is-selected' : '']">
+                <button class="min-w-0 flex-1 text-left focus-ring" @click="selectGroup(group)">
+                  <span class="flex flex-wrap items-center justify-between gap-2">
                     <span class="text-sm font-extrabold">{{ groupTypeOption(group.type).label }}</span>
                     <span class="flex gap-1.5">
                       <span class="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-ink/55">{{ group.questions.length }} câu</span>
                       <span v-if="group.media.length" class="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-ink/55">{{ group.media.length }} ảnh</span>
                       <span v-if="group.audioAssetId" class="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-ink/55">audio</span>
                     </span>
-                  </div>
-                  <p v-if="group.questions.length" class="mt-1.5 truncate text-[11px] text-ink/45">Câu {{ group.questions.map((question) => question.numberInTest ?? '?').join(', ') }}</p>
+                  </span>
+                  <span v-if="group.questions.length" class="mt-1.5 block truncate text-[11px] text-ink/45">Câu {{ group.questions.map((question) => question.numberInTest ?? '?').join(', ') }}</span>
                 </button>
+                <span class="flex shrink-0 items-center gap-1">
+                  <button class="icon-button focus-ring" :disabled="busy || groupIndex === 0" :aria-label="`Đưa ${groupTypeOption(group.type).label} lên trên`" @click="moveGroup(section, group, -1)">↑</button>
+                  <button class="icon-button focus-ring" :disabled="busy || groupIndex === section.groups.length - 1" :aria-label="`Đưa ${groupTypeOption(group.type).label} xuống dưới`" @click="moveGroup(section, group, 1)">↓</button>
+                  <button class="icon-button is-danger focus-ring" :disabled="busy" :aria-label="`Xoá ${groupTypeOption(group.type).label}`" @click="removeGroup(group)">✕</button>
+                </span>
               </li>
             </ul>
             <p v-else class="mt-4 rounded-2xl bg-mint p-4 text-xs text-ink/55">Section này chưa có nhóm nào.</p>
@@ -440,12 +633,14 @@ onMounted(async () => { await ensureConsole(); await Promise.all([loadTests(), l
             <div class="mt-7 border-t border-line pt-5">
               <p class="text-xs font-extrabold text-ink/45">CÂU HỎI TRONG NHÓM</p>
               <ol v-if="selectedGroup.questions.length" class="mt-3 space-y-2">
-                <li v-for="question in selectedGroup.questions" :key="question.id" class="rounded-2xl bg-mint p-3">
+                <li v-for="question in selectedGroup.questions" :key="question.id" :class="['rounded-2xl p-3', editingQuestionId === question.id ? 'bg-azure' : 'bg-mint']">
                   <div class="flex flex-wrap items-center justify-between gap-2">
                     <span class="text-xs font-extrabold">Câu {{ question.numberInTest ?? '—' }}</span>
-                    <span class="flex gap-1.5">
+                    <span class="flex items-center gap-1.5">
                       <span class="rounded-lg bg-white px-2 py-0.5 text-[10px] font-extrabold text-[#46A900]">Đáp án {{ question.answerKey }}</span>
                       <span v-if="question.optionsHidden" class="rounded-lg bg-white px-2 py-0.5 text-[10px] font-extrabold text-ink/55">ẩn phương án</span>
+                      <button class="rounded-lg px-2 py-0.5 text-[10px] font-extrabold text-iris hover:bg-white focus-ring" @click="editQuestion(question)">Sửa</button>
+                      <button class="rounded-lg px-2 py-0.5 text-[10px] font-extrabold text-[#B5473A] hover:bg-blush focus-ring" :disabled="busy" @click="removeQuestion(question)">Xoá</button>
                     </span>
                   </div>
                   <p class="mt-1.5 text-xs leading-5 text-ink/60">{{ promptText(question.prompt) }}</p>
@@ -454,7 +649,10 @@ onMounted(async () => { await ensureConsole(); await Promise.all([loadTests(), l
               <p v-else class="mt-3 rounded-2xl bg-mint p-4 text-xs text-ink/55">Nhóm này chưa có câu hỏi nào.</p>
 
               <div class="mt-5 space-y-3 rounded-2xl border border-line p-4">
-                <p class="text-xs font-extrabold text-ink/45">THÊM CÂU HỎI</p>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <p class="text-xs font-extrabold text-ink/45">{{ editingQuestionId ? 'SỬA CÂU HỎI' : 'THÊM CÂU HỎI' }}</p>
+                  <button v-if="editingQuestionId" class="rounded-lg px-2 py-1 text-[11px] font-extrabold text-ink/55 hover:bg-mint focus-ring" @click="resetQuestionDraft(selectedGroup)">Huỷ sửa</button>
+                </div>
                 <textarea v-model="draftQuestion.prompt" rows="2" class="w-full rounded-2xl border border-line px-4 py-3 text-sm outline-none" placeholder="Đề bài — với Part 1 và 2 hãy ghi hướng dẫn nghe" aria-label="Đề bài" />
                 <div class="grid gap-2 sm:grid-cols-2">
                   <div v-for="(key, position) in selectedGroupSpec.optionKeys" :key="key" class="flex items-center gap-2">
@@ -469,8 +667,38 @@ onMounted(async () => { await ensureConsole(); await Promise.all([loadTests(), l
                   <AppInput v-model.number="draftQuestion.numberInTest" class="w-full sm:w-32" type="number" min="1" max="400" placeholder="Số câu" aria-label="Số câu trong đề" />
                   <AppInput v-model="draftQuestion.explanation" class="min-w-[160px] flex-1" placeholder="Giải thích (tuỳ chọn)" aria-label="Giải thích" />
                 </div>
-                <button class="cta-grass w-full px-4 py-3 text-xs font-extrabold disabled:opacity-40 focus-ring" :disabled="busy" @click="addQuestion">Thêm câu hỏi vào nhóm</button>
+                <button class="cta-grass w-full px-4 py-3 text-xs font-extrabold disabled:opacity-40 focus-ring" :disabled="busy" @click="addQuestion">{{ editingQuestionId ? 'Lưu câu hỏi' : 'Thêm câu hỏi vào nhóm' }}</button>
               </div>
+            </div>
+          </div>
+
+          <!-- Import a whole paper -->
+          <div class="rounded-[22px] border border-line p-5 sm:p-6">
+            <p class="text-xs font-extrabold text-ink/45">IMPORT CẢ ĐỀ</p>
+            <h3 class="mt-1 text-lg font-extrabold">Nạp một manifest</h3>
+            <p class="mt-2 max-w-2xl text-xs leading-5 text-ink/55">
+              Một JSON mô tả toàn bộ cây <code class="rounded bg-mint px-1.5 py-0.5">sections → groups → questions</code>. Ảnh và audio gọi theo <b>tên tệp</b> đã có trong media library, nên tệp vẫn upload ở màn Media còn manifest chỉ mang cấu trúc. Chạy thử trước; chỉ khi không còn lỗi nào thì mới ghi.
+            </p>
+            <textarea v-model="importText" rows="10" class="mt-4 w-full rounded-2xl border border-line px-4 py-3 font-mono text-xs leading-6 outline-none" aria-label="Manifest JSON" placeholder='{ "sections": [ { "kind": "LISTENING", "label": "Listening", "durationMin": 45, "groups": [ … ] } ] }' />
+            <label class="mt-3 flex cursor-pointer items-center gap-2 text-xs text-ink/60">
+              <input v-model="importReplace" type="checkbox" class="h-4 w-4 accent-iris">
+              Thay toàn bộ section hiện có (xoá rồi nạp lại) thay vì nối thêm
+            </label>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <button class="cta-sky px-4 py-3 text-xs font-extrabold disabled:opacity-40 focus-ring" :disabled="busy || !importText.trim()" @click="runImport(true)">Chạy thử</button>
+              <button class="cta-grass px-4 py-3 text-xs font-extrabold disabled:opacity-40 focus-ring" :disabled="busy || !importText.trim()" @click="runImport(false)">Import thật</button>
+            </div>
+
+            <div v-if="importReport" class="mt-4 rounded-2xl p-4" :class="importReport.issues.length ? 'bg-blush' : 'bg-mint'">
+              <p class="text-sm font-extrabold">
+                {{ importReport.issues.length ? `${importReport.issues.length} lỗi cần sửa` : importReport.applied ? 'Đã ghi vào đề' : 'Manifest hợp lệ — chưa ghi gì' }}
+              </p>
+              <p class="mt-1.5 text-xs text-ink/60">
+                {{ importReport.counts.sections ?? 0 }} section · {{ importReport.counts.groups ?? 0 }} nhóm · {{ importReport.counts.questions ?? 0 }} câu · {{ importReport.counts.images ?? 0 }} ảnh · {{ importReport.counts.conversions ?? 0 }} dòng quy đổi
+              </p>
+              <ul v-if="importReport.issues.length" class="mt-3 space-y-1.5 text-xs text-[#B5473A]">
+                <li v-for="issue in importReport.issues" :key="`${issue.path}-${issue.message}`"><code class="rounded bg-white px-1.5 py-0.5">{{ issue.path }}</code> — {{ issue.message }}</li>
+              </ul>
             </div>
           </div>
 
@@ -491,3 +719,33 @@ onMounted(async () => { await ensureConsole(); await Promise.all([loadTests(), l
     </div>
   </div>
 </template>
+
+<style scoped>
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  corner-shape: squircle;
+  padding: .85rem .95rem;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.group-row:hover { background: var(--mint); }
+.group-row.is-selected { border-color: var(--iris); background: var(--azure); }
+
+.icon-button {
+  display: grid;
+  height: 1.85rem;
+  width: 1.85rem;
+  place-items: center;
+  border-radius: 10px;
+  font-size: .8rem;
+  font-weight: 800;
+  color: rgba(38, 50, 56, .5);
+  transition: background-color .15s ease, color .15s ease;
+}
+.icon-button:hover:not(:disabled) { background: #fff; color: var(--ink); }
+.icon-button.is-danger:hover:not(:disabled) { background: var(--blush); color: #B5473A; }
+.icon-button:disabled { opacity: .3; cursor: not-allowed; }
+</style>

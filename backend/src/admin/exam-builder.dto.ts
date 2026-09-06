@@ -249,3 +249,25 @@ export class UpdateGroupQuestionDto {
   @Type(() => QuestionOptionDto)
   options?: QuestionOptionDto[];
 }
+
+export class ImportPaperDto {
+  /** Validate and report without writing anything. */
+  @IsOptional()
+  @IsBoolean()
+  dryRun?: boolean;
+
+  /** Replace the paper's existing sections instead of appending to them. */
+  @IsOptional()
+  @IsBoolean()
+  replaceExisting?: boolean;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(20)
+  sections!: unknown[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(1000)
+  conversions?: unknown[];
+}

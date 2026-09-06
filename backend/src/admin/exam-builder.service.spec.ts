@@ -1,4 +1,4 @@
-import { ExamSectionKind, MediaStatus, QuestionGroupType, QuestionKind } from '@prisma/client';
+import { ContentLicense, ContentStatus, ExamSectionKind, MediaStatus, QuestionGroupType, QuestionKind } from '@prisma/client';
 import { ExamBuilderService } from './exam-builder.service';
 
 const readyPublicImage = { status: MediaStatus.READY, visibility: 'public', mimeType: 'image/jpeg' };
@@ -124,6 +124,91 @@ describe('ExamBuilderService', () => {
       await expect(serviceWith(prisma).addGroup('t1', 'admin-1', {
         sectionId: 's-other', type: QuestionGroupType.CONVERSATION, part: 3
       })).rejects.toMatchObject({ code: 'SECTION_NOT_IN_TEST' });
+    });
+  });
+
+  describe('licence', () => {
+    it('refuses to publish a paper marked restricted', async () => {
+      const prisma = { mockTest: { findUnique: jest.fn().mockResolvedValue({ id: 't1', title: 'ETS form', license: ContentLicense.RESTRICTED, _count: { questions: 20 } }) } };
+      await expect(serviceWith(prisma).publish('t1', 'admin-1')).rejects.toMatchObject({ code: 'MOCK_TEST_RESTRICTED' });
+    });
+
+    it('pulls a live paper back to draft when it is marked restricted', async () => {
+      const tx = { mockTest: { update: jest.fn().mockResolvedValue({ id: 't1', status: ContentStatus.DRAFT }) }, auditLog: { create: jest.fn() } };
+      const prisma = {
+        mockTest: { findUnique: jest.fn().mockResolvedValue({ id: 't1', status: ContentStatus.PUBLISHED }) },
+        $transaction: jest.fn((callback: (tx: unknown) => unknown) => callback(tx))
+      };
+      await serviceWith(prisma).updateTest('t1', 'admin-1', { license: ContentLicense.RESTRICTED });
+      expect(tx.mockTest.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ status: ContentStatus.DRAFT }) }));
+      expect(tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: 'MOCK_TEST_RESTRICTED_UNPUBLISHED' }) }));
+    });
+  });
+
+  describe('deleting a group', () => {
+    it('takes its questions and their test enrolment with it', async () => {
+      const tx = {
+        mockTestQuestion: { deleteMany: jest.fn() },
+        question: { deleteMany: jest.fn() },
+        questionGroup: { delete: jest.fn() },
+        auditLog: { create: jest.fn() }
+      };
+      const prisma = {
+        questionGroup: { findUnique: jest.fn().mockResolvedValue({ id: 'g1', sectionId: 's1', questions: [{ id: 'q1' }, { id: 'q2' }] }) },
+        $transaction: jest.fn((callback: (tx: unknown) => unknown) => callback(tx))
+      };
+      await expect(serviceWith(prisma).deleteGroup('g1', 'admin-1')).resolves.toEqual({ groupId: 'g1', removedQuestions: 2 });
+      expect(tx.mockTestQuestion.deleteMany).toHaveBeenCalledWith({ where: { questionId: { in: ['q1', 'q2'] } } });
+      expect(tx.question.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['q1', 'q2'] } } });
+    });
+  });
+
+  describe('reordering groups', () => {
+    const prismaWith = (ids: string[], tx: Record<string, unknown>) => ({
+      questionGroup: { findMany: jest.fn().mockResolvedValue(ids.map((id) => ({ id }))) },
+      $transaction: jest.fn((callback: (tx: unknown) => unknown) => callback(tx))
+    });
+
+    it('parks rows out of range first so the unique order never clashes mid-write', async () => {
+      const tx = { questionGroup: { update: jest.fn() }, auditLog: { create: jest.fn() } };
+      await serviceWith(prismaWith(['a', 'b'], tx)).reorderGroups('s1', 'admin-1', { groupIds: ['b', 'a'] });
+      const orders = tx.questionGroup.update.mock.calls.map((call) => call[0].data.sortOrder);
+      expect(orders).toEqual([-1, -2, 1, 2]);
+    });
+
+    it('refuses a list that does not name exactly the section groups', async () => {
+      const tx = { questionGroup: { update: jest.fn() }, auditLog: { create: jest.fn() } };
+      await expect(serviceWith(prismaWith(['a', 'b'], tx)).reorderGroups('s1', 'admin-1', { groupIds: ['a'] }))
+        .rejects.toMatchObject({ code: 'GROUP_ORDER_MISMATCH' });
+    });
+
+    it('refuses a list that repeats a group', async () => {
+      const tx = { questionGroup: { update: jest.fn() }, auditLog: { create: jest.fn() } };
+      await expect(serviceWith(prismaWith(['a', 'b'], tx)).reorderGroups('s1', 'admin-1', { groupIds: ['a', 'a'] }))
+        .rejects.toMatchObject({ code: 'DUPLICATE_GROUP_IN_ORDER' });
+    });
+  });
+
+  describe('editing a question', () => {
+    it('checks the answer key against the replacement options, not the old ones', async () => {
+      const prisma = { question: { findUnique: jest.fn().mockResolvedValue({ id: 'q1', answerKey: 'D', options: [{ key: 'D' }] }) } };
+      await expect(serviceWith(prisma).updateQuestion('q1', 'admin-1', { options: [{ key: 'A', text: 'one' }, { key: 'B', text: 'two' }] }))
+        .rejects.toMatchObject({ code: 'ANSWER_KEY_NOT_IN_OPTIONS' });
+    });
+
+    it('replaces the option set wholesale so no orphan letter survives', async () => {
+      const tx = {
+        questionOption: { deleteMany: jest.fn(), createMany: jest.fn() },
+        question: { update: jest.fn().mockResolvedValue({ id: 'q1' }) },
+        auditLog: { create: jest.fn() }
+      };
+      const prisma = {
+        question: { findUnique: jest.fn().mockResolvedValue({ id: 'q1', answerKey: 'A', options: [{ key: 'A' }, { key: 'B' }, { key: 'C' }] }) },
+        $transaction: jest.fn((callback: (tx: unknown) => unknown) => callback(tx))
+      };
+      await serviceWith(prisma).updateQuestion('q1', 'admin-1', { answerKey: 'a', options: [{ key: 'A', text: 'one' }, { key: 'B', text: 'two' }] });
+      expect(tx.questionOption.deleteMany).toHaveBeenCalledWith({ where: { questionId: 'q1' } });
+      expect(tx.question.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ answerKey: 'A' }) }));
     });
   });
 });
