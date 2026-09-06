@@ -6,7 +6,7 @@ export default {
     extend: {
       colors: {
         ink: '#17213F',
-        iris: '#5D5FEF',
+        iris: '#1CB0F6',
         bean: '#F4B942',
         leaf: '#62C7A5',
         paper: '#FFFFFF',

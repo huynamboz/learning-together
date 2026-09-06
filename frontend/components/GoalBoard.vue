@@ -11,7 +11,7 @@ function valueLabel(goal: Goal) {
 function width(goal: Goal) { return `${Math.min(100, Math.round((goal.achieved / goal.target) * 100))}%`; }
 
 function toneClass(tone: Goal['tone']) {
-  return { leaf: 'bg-leaf', iris: 'bg-iris', bean: 'bg-bean', ink: 'bg-ink', pink: 'bg-[#D783B8]' }[tone];
+  return { leaf: 'bg-leaf', iris: 'bg-iris', bean: 'bg-bean', ink: 'bg-ink', pink: 'bg-[#1CB0F6]' }[tone];
 }
 </script>
 
