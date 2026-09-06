@@ -11,12 +11,14 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
 import { ApiError } from '@/common/http/api-error';
+import { toReadable } from './storage.types';
 import type {
   CompleteUploadInput,
   CreateUploadInput,
   ObjectMetadata,
   ObjectRef,
   ObjectStorage,
+  ReadableObject,
   ServerFileInput,
   StoredObject,
   UploadInstructions,
@@ -76,6 +78,23 @@ export class S3CompatibleStorage implements ObjectStorage {
     try {
       const result = await this.client.send(new HeadObjectCommand({ Bucket: ref.bucket, Key: ref.key }));
       return { size: Number(result.ContentLength ?? 0), checksum: result.ChecksumSHA256, etag: result.ETag?.replaceAll('"', ''), contentType: result.ContentType };
+    } catch (error) {
+      const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+      if (status === 404) return null;
+      throw error;
+    }
+  }
+
+  async getObject(ref: ObjectRef): Promise<ReadableObject | null> {
+    try {
+      const result = await this.client.send(new GetObjectCommand({ Bucket: ref.bucket, Key: ref.key }));
+      if (!result.Body) return null;
+      return {
+        ...ref,
+        stream: toReadable(result.Body as NodeJS.ReadableStream),
+        size: result.ContentLength === undefined ? undefined : Number(result.ContentLength),
+        contentType: result.ContentType
+      };
     } catch (error) {
       const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
       if (status === 404) return null;

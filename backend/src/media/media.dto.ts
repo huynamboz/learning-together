@@ -1,9 +1,9 @@
-import { IsInt, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateUploadSessionDto {
   @IsString()
-  @Min(1)
-  @Max(255)
+  @MinLength(1)
+  @MaxLength(255)
   originalName!: string;
 
   @IsString()
@@ -20,7 +20,7 @@ export class CreateUploadSessionDto {
   checksum?: string;
 
   @IsString()
-  @Min(1)
-  @Max(64)
+  @MinLength(1)
+  @MaxLength(64)
   purpose!: string;
 }

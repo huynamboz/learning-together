@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import { copyFile, mkdir, readFile, rename, stat, unlink } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { ApiError } from '@/common/http/api-error';
-import type { CompleteUploadInput, CreateUploadInput, ObjectMetadata, ObjectRef, ObjectStorage, ServerFileInput, StoredObject, UploadInstructions } from './storage.types';
+import type { CompleteUploadInput, CreateUploadInput, ObjectMetadata, ObjectRef, ObjectStorage, ReadableObject, ServerFileInput, StoredObject, UploadInstructions } from './storage.types';
 
 @Injectable()
 export class LocalStorage implements ObjectStorage {
@@ -41,6 +42,12 @@ export class LocalStorage implements ObjectStorage {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
       throw error;
     }
+  }
+
+  async getObject(ref: ObjectRef): Promise<ReadableObject | null> {
+    const metadata = await this.headObject(ref);
+    if (!metadata) return null;
+    return { ...ref, stream: createReadStream(this.filePath(ref.key)), size: metadata.size };
   }
 
   async getReadUrl(ref: ObjectRef): Promise<string> {

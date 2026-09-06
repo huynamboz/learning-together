@@ -1,5 +1,5 @@
 import { ContentType } from '@prisma/client';
-import { IsEnum, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsObject, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class CreateContentDto {
   @IsEnum(ContentType)
@@ -25,4 +25,9 @@ export class CreateContentDto {
 
   @IsObject()
   payload!: Record<string, unknown>;
+}
+
+export class AttachContentMediaDto {
+  @IsUUID()
+  assetId!: string;
 }

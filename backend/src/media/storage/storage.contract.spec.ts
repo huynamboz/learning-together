@@ -1,6 +1,7 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { text } from 'node:stream/consumers';
 import { LocalStorage } from './local.storage';
 
 describe('ObjectStorage contract: local provider', () => {
@@ -18,6 +19,8 @@ describe('ObjectStorage contract: local provider', () => {
     const result = await storage.putFile({ bucket: 'toeic-web', key, filePath: source, mimeType: 'text/plain', byteSize: 11 });
     expect(result.size).toBe(11);
     expect((await storage.headObject({ bucket: 'toeic-web', key }))?.size).toBe(11);
+    const readable = await storage.getObject({ bucket: 'toeic-web', key });
+    expect(await text(readable!.stream)).toBe('hello toeic');
     await storage.completeUpload({ bucket: 'toeic-web', key, expectedSize: 11 });
     await storage.deleteObject({ bucket: 'toeic-web', key });
     expect(await storage.headObject({ bucket: 'toeic-web', key })).toBeNull();

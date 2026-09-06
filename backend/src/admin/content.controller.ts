@@ -1,9 +1,9 @@
 import { ContentStatus, ContentType, RoleName } from '@prisma/client';
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { AuthenticatedRequest, RolesGuard } from '@/access/roles.guard';
 import { Roles } from '@/access/roles.decorator';
-import { CreateContentDto } from './content.dto';
+import { AttachContentMediaDto, CreateContentDto } from './content.dto';
 import { ContentAdminService } from './content.service';
 
 @Controller('admin/content')
@@ -22,4 +22,7 @@ export class ContentAdminController {
 
   @Post(':id/publish')
   publish(@Req() request: AuthenticatedRequest, @Param('id') id: string) { return this.service.publish(id, request.user!.id); }
+
+  @Patch(':id/media')
+  attachMedia(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Body() dto: AttachContentMediaDto) { return this.service.attachMedia(id, dto.assetId, request.user!.id); }
 }

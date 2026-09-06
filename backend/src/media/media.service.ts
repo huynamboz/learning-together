@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { unlink } from 'node:fs/promises';
+import * as fsPromises from 'node:fs/promises';
 import { extname } from 'node:path';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -45,13 +45,13 @@ export class MediaService {
   }
 
   async uploadServerFile(userId: string, sessionId: string, filePath: string, mimeType: string, byteSize: number) {
-    const session = await this.getOwnedSession(userId, sessionId);
-    if (this.storage.name !== 'local') throw new ApiError('DIRECT_UPLOAD_REQUIRED', 'Provider hiện tại yêu cầu upload trực tiếp.', {}, 422);
     try {
+      const session = await this.getOwnedSession(userId, sessionId);
+      if (this.storage.name !== 'local') throw new ApiError('DIRECT_UPLOAD_REQUIRED', 'Provider hiện tại yêu cầu upload trực tiếp.', {}, 422);
       await this.storage.putFile({ bucket: session.asset.bucket, key: session.objectKey, filePath, mimeType, byteSize });
       return this.complete(userId, sessionId);
     } finally {
-      await unlink(filePath).catch(() => undefined);
+      await fsPromises.unlink(filePath).catch(() => undefined);
     }
   }
 
@@ -63,6 +63,19 @@ export class MediaService {
       this.prisma.mediaAsset.update({ where: { id: session.assetId }, data: { status: MediaStatus.DELETED } })
     ]);
     return { status: UploadStatus.ABORTED };
+  }
+
+  async openPublicAsset(id: string) {
+    const asset = await this.prisma.mediaAsset.findUnique({
+      where: { id },
+      select: { id: true, bucket: true, objectKey: true, originalName: true, mimeType: true, status: true, visibility: true }
+    });
+    if (!asset || asset.status !== MediaStatus.READY || asset.visibility !== 'public') {
+      throw new NotFoundException('Asset không sẵn sàng để phát.');
+    }
+    const stored = await this.storage.getObject({ bucket: asset.bucket, key: asset.objectKey });
+    if (!stored) throw new NotFoundException('Asset không sẵn sàng để phát.');
+    return { stream: stored.stream, size: stored.size, mimeType: stored.contentType ?? asset.mimeType, originalName: asset.originalName };
   }
 
   private async getOwnedSession(userId: string, sessionId: string) {

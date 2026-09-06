@@ -42,6 +42,12 @@ export interface ObjectMetadata {
   contentType?: string;
 }
 
+export interface ReadableObject extends ObjectRef {
+  stream: Readable;
+  size?: number;
+  contentType?: string;
+}
+
 export interface ServerFileInput extends ObjectRef {
   filePath: string;
   mimeType: string;
@@ -55,6 +61,7 @@ export interface ObjectStorage {
   completeUpload(input: CompleteUploadInput): Promise<StoredObject>;
   putFile(input: ServerFileInput): Promise<StoredObject>;
   headObject(ref: ObjectRef): Promise<ObjectMetadata | null>;
+  getObject(ref: ObjectRef): Promise<ReadableObject | null>;
   getReadUrl(ref: ObjectRef, expiresInSeconds?: number): Promise<string>;
   deleteObject(ref: ObjectRef): Promise<void>;
   copyObject(input: { source: ObjectRef; destination: ObjectRef }): Promise<StoredObject>;

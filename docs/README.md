@@ -25,6 +25,8 @@ Tài liệu này ghi nhận các chức năng quan sát được từ website đ
 - [Phase 9 — Operational data and browser verification](./implementation-plan/phase-9-operational-data-and-browser-verification.md)
 - [Phase 10 — Content, engagement and learner-history plan](./implementation-plan/phase-10-content-engagement-plan.md)
 - [Phase 10 — Content and engagement browser verification](./implementation-plan/phase-10-browser-verification.md)
+- [Phase 11 — Media delivery and Writing review plan](./implementation-plan/phase-11-media-and-writing-review-plan.md)
+- [Phase 11 — Media and Writing review browser verification](./implementation-plan/phase-11-browser-verification.md)
 - [Tài khoản, gói học và affiliate](./09-account-and-monetization.md)
 - [Blog, giới thiệu và feedback](./10-blog-about-feedback.md)
 - [Pháp lý, footer và tương thích route](./11-legal-and-navigation.md)
