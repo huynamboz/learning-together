@@ -190,8 +190,8 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
 </script>
 
 <template>
-  <div class="page-enter space-y-6">
-    <section class="relative overflow-hidden rounded-[28px] bg-ink p-6 text-white shadow-float sm:p-9">
+  <div class="hub-page page-enter space-y-6">
+    <section class="hub-hero relative overflow-hidden rounded-[28px] bg-ink p-6 text-white shadow-float sm:p-9">
       <div class="relative z-10 flex flex-wrap items-end justify-between gap-7">
         <div class="flex items-center gap-4 sm:gap-5">
           <div class="grid h-16 w-16 shrink-0 place-items-center rounded-[22px] bg-leaf text-2xl font-extrabold text-ink shadow-soft sm:h-20 sm:w-20 sm:text-3xl">{{ initials }}</div>
@@ -215,7 +215,7 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
     <div v-if="notice" class="rounded-2xl bg-bean/20 px-4 py-3 text-xs font-bold text-[#8B6400]" role="status">{{ notice }}</div>
 
     <div class="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
-      <nav class="overflow-hidden rounded-[22px] border border-line bg-white p-2 shadow-soft" aria-label="Quản lý tài khoản">
+      <nav class="hub-nav overflow-hidden rounded-[22px] border border-line bg-white p-2 shadow-soft" aria-label="Quản lý tài khoản">
         <button v-for="tab in tabs" :key="tab.key" class="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-paper focus-ring" :class="activeTab === tab.key ? 'bg-[#E7F7F1] text-ink' : 'text-ink/65'" @click="goToTab(tab.key)">
           <span class="grid h-8 w-8 shrink-0 place-items-center rounded-xl text-sm" :class="activeTab === tab.key ? 'bg-leaf text-ink' : 'bg-paper text-ink/55'">{{ tab.icon }}</span>
           <span class="min-w-0"><span class="block text-xs font-extrabold">{{ tab.label }}</span><span class="mt-0.5 block text-[11px] leading-4 text-ink/45">{{ tab.detail }}</span></span>
@@ -224,7 +224,7 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
         <NuxtLink to="/" class="flex items-center gap-2 rounded-2xl px-3 py-3 text-xs font-bold text-ink/55 hover:bg-paper focus-ring">← Về dashboard học</NuxtLink>
       </nav>
 
-      <section class="min-w-0 rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-7">
+      <section class="hub-panel min-w-0 rounded-[22px] border border-line bg-white p-5 shadow-soft sm:p-7">
         <div v-if="loading" class="rounded-2xl bg-paper p-6 text-sm text-ink/55">Đang mở không gian tài khoản…</div>
 
         <template v-else-if="activeTab === 'profile'">
@@ -263,3 +263,100 @@ watch(notificationPrefs, saveNotificationPrefs, { deep: true });
     </div>
   </div>
 </template>
+
+<style scoped>
+.hub-page {
+  --hub-cream: #fffdf7;
+  --hub-mint: #eaf8ef;
+  --hub-green: #58cc02;
+  --hub-blue: #1cb0f6;
+  --hub-yellow: #ffc800;
+  --hub-ink: #263238;
+  width: 100vw;
+  margin: -1.5rem calc(50% - 50vw) -4rem;
+  min-height: calc(100vh - 68px);
+  padding: 1.5rem max(1rem, calc((100vw - 1320px) / 2 + 1rem)) 4rem;
+  background: var(--hub-cream);
+  color: var(--hub-ink);
+}
+
+.hub-page :is(.shadow-soft, .shadow-float) { box-shadow: none !important; }
+.hub-page :is(.border-line) { border-color: #dcecdf !important; }
+.hub-page :is(.bg-white) { background-color: transparent !important; }
+.hub-page :is(.bg-paper) { background-color: var(--hub-mint) !important; }
+.hub-page :is(input, textarea) { border-color: #bfe3c7 !important; background: #fff !important; }
+.hub-page :is(input, textarea):focus { border-color: var(--hub-green) !important; box-shadow: 0 0 0 3px rgba(88, 204, 2, .15); }
+.hub-page :is(.text-ink\/45, .text-ink\/50, .text-ink\/55, .text-ink\/60, .text-ink\/65) { color: rgba(38, 50, 56, .68) !important; }
+
+.hub-hero {
+  border-bottom: 5px solid var(--hub-green);
+  border-radius: 22px !important;
+  background: #e9f8e6 !important;
+  color: var(--hub-ink) !important;
+}
+
+.hub-hero .text-white { color: var(--hub-ink) !important; }
+.hub-hero :is(.text-white\/45, .text-white\/60) { color: rgba(38, 50, 56, .62) !important; }
+.hub-hero .text-leaf { color: #46a900 !important; }
+.hub-hero .border-white\/10 { border-color: rgba(38, 50, 56, .1) !important; }
+
+.hub-hero::after {
+  position: absolute;
+  right: 2.5rem;
+  bottom: 0;
+  left: 2.5rem;
+  height: 5px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, var(--hub-green) 0 42%, var(--hub-yellow) 42% 58%, rgba(255,255,255,.16) 58%);
+  content: '';
+}
+
+.hub-nav {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.hub-nav button {
+  border-radius: 14px;
+  border-left: 4px solid transparent;
+  min-height: 3.9rem;
+}
+
+.hub-nav button:hover { background: #f1faee !important; }
+.hub-nav button[class*="bg-[#E7F7F1]"] { border-left-color: var(--hub-green); background: var(--hub-mint) !important; }
+.hub-nav button[class*="bg-[#E7F7F1]"] span:first-child { background: var(--hub-green) !important; }
+
+.hub-panel {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.hub-panel > :is(template, div) { max-width: 55rem; }
+.hub-panel :is(.bg-\[\#E7F7F1\]) { background: var(--hub-mint) !important; }
+.hub-panel :is(.bg-\[\#FFF6DF\]) { background: #fff7d6 !important; }
+.hub-panel button[class*="bg-ink"] { background: var(--hub-green) !important; color: var(--hub-ink) !important; box-shadow: 0 3px 0 #46a900; }
+.hub-panel button[class*="bg-ink"]:hover { background: #78db28 !important; }
+.hub-panel a[class*="bg-ink"] { background: var(--hub-blue) !important; color: white !important; box-shadow: 0 3px 0 #1288c8; }
+.hub-panel a[class*="bg-ink"]:hover { background: #42baf2 !important; }
+
+@media (min-width: 640px) {
+  .hub-page { padding-inline: max(1.5rem, calc((100vw - 1320px) / 2 + 1.5rem)); }
+}
+
+@media (min-width: 1024px) {
+  .hub-page { padding-inline: max(2rem, calc((100vw - 1320px) / 2 + 2rem)); }
+}
+
+@media (max-width: 639px) {
+  .hub-hero { border-radius: 18px !important; padding: 1.25rem !important; }
+  .hub-hero .grid { text-align: left; }
+  .hub-hero::after { right: 1.25rem; left: 1.25rem; }
+  .hub-nav { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem !important; scrollbar-width: none; }
+  .hub-nav::-webkit-scrollbar { display: none; }
+  .hub-nav button { min-width: 10.5rem; border-left: 0; border-bottom: 4px solid transparent; }
+  .hub-nav button[class*="bg-[#E7F7F1]"] { border-bottom-color: var(--hub-green); }
+  .hub-nav button > span:last-child span:last-child { white-space: nowrap; }
+}
+</style>

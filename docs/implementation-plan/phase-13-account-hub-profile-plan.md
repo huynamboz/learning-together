@@ -7,6 +7,7 @@
 - Thêm alias `/profile` để deep-link tới hồ sơ cá nhân.
 - Dùng API hiện có cho user, dashboard, devices và notifications; không hiển thị số referral giả khi attribution/billing chưa có dữ liệu.
 - Lưu tùy chọn nhắc thông báo ở browser hiện tại cho đến khi có API preference server-side.
+- Visual pass theo hướng Duolingo: nền kem full-bleed, mint progress hero, CTA xanh XP, tab active dạng pill/đường dẫn và bỏ shadow dashboard.
 
 ## Acceptance
 
