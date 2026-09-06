@@ -15,6 +15,7 @@ import solarHeadphones from '@iconify-icons/solar/headphones-round-sound-bold';
 import solarLock from '@iconify-icons/solar/lock-keyhole-minimalistic-bold';
 import solarPen from '@iconify-icons/solar/pen-new-square-bold';
 import solarPlay from '@iconify-icons/solar/play-circle-bold';
+import solarRecord from '@iconify-icons/solar/record-circle-bold';
 import solarShare from '@iconify-icons/solar/share-bold';
 import solarUpload from '@iconify-icons/solar/upload-minimalistic-bold';
 import solarUser from '@iconify-icons/solar/user-circle-bold-duotone';
@@ -36,6 +37,7 @@ const iconMap: Record<string, IconifyIcon> = {
   'solar:lock-keyhole-minimalistic-bold': solarLock,
   'solar:pen-new-square-bold': solarPen,
   'solar:play-circle-bold': solarPlay,
+  'solar:record-circle-bold': solarRecord,
   'solar:share-bold': solarShare,
   'solar:upload-minimalistic-bold': solarUpload,
   'solar:user-circle-bold-duotone': solarUser,
