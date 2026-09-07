@@ -17,6 +17,7 @@ const index = ref(0);
 const flipped = ref(false);
 const saving = ref(false);
 const reviewed = ref<Set<string>>(new Set());
+let advanceTimer: ReturnType<typeof setTimeout> | undefined;
 
 const words = computed(() => set.value?.words ?? []);
 const current = computed(() => words.value[index.value] ?? null);
@@ -38,7 +39,13 @@ async function loadSet() {
 
 function advance() {
   flipped.value = false;
-  if (index.value < words.value.length - 1) index.value += 1;
+  if (index.value < words.value.length - 1) {
+    if (advanceTimer) clearTimeout(advanceTimer);
+    advanceTimer = setTimeout(() => {
+      index.value += 1;
+      advanceTimer = undefined;
+    }, 260);
+  }
 }
 
 async function rate(rating: SrsRating) {
@@ -60,6 +67,9 @@ async function rate(rating: SrsRating) {
 }
 
 onMounted(loadSet);
+onBeforeUnmount(() => {
+  if (advanceTimer) clearTimeout(advanceTimer);
+});
 </script>
 
 <template>
@@ -93,14 +103,27 @@ onMounted(loadSet);
           <span v-if="current.partOfSpeech" class="rounded-lg bg-mint px-2 py-1 text-[11px] font-bold text-ink/55">{{ current.partOfSpeech }}</span>
         </div>
 
-        <button class="flashcard focus-ring" :aria-pressed="flipped" @click="flipped = !flipped">
-          <span class="block text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">{{ current.lemma }}</span>
-          <span v-if="current.pronunciation" class="mt-2 block text-sm text-white/60">{{ current.pronunciation }}</span>
-          <template v-if="flipped">
-            <span class="mt-5 block text-lg font-extrabold text-white">{{ meaningOf(current) || 'Chưa có nghĩa cho từ này' }}</span>
-            <span v-if="exampleOf(current)" class="mt-3 block text-sm leading-6 text-white/70">{{ exampleOf(current) }}</span>
-          </template>
-          <span v-else class="mt-5 block text-sm text-white/55">Chạm để lật thẻ</span>
+        <button
+          class="flashcard-scene focus-ring"
+          :aria-label="flipped ? `${current.lemma}: ${meaningOf(current) || 'Chưa có nghĩa'}. Chạm để quay lại mặt trước.` : `${current.lemma}. Chạm để xem nghĩa.`"
+          :aria-pressed="flipped"
+          @click="flipped = !flipped"
+        >
+          <span class="flashcard-inner" :class="{ 'is-flipped': flipped }">
+            <span class="flashcard-face flashcard-front" :aria-hidden="flipped">
+              <span class="flashcard-cue"><AppIcon icon="solar:refresh-circle-bold" :size="17" /> Lật thẻ</span>
+              <span class="block text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">{{ current.lemma }}</span>
+              <span v-if="current.pronunciation" class="mt-2 block text-sm text-white/60">{{ current.pronunciation }}</span>
+              <span class="mt-6 block text-sm text-white/55">Chạm để xem nghĩa</span>
+            </span>
+
+            <span class="flashcard-face flashcard-back" :aria-hidden="!flipped">
+              <span class="flashcard-cue flashcard-cue-back"><AppIcon icon="solar:refresh-circle-bold" :size="17" /> Xem lại từ</span>
+              <span class="text-sm font-bold text-white/70">{{ current.lemma }}</span>
+              <span class="mt-3 block text-2xl font-extrabold tracking-[-0.035em] text-white sm:text-3xl">{{ meaningOf(current) || 'Chưa có nghĩa cho từ này' }}</span>
+              <span v-if="exampleOf(current)" class="mt-4 block max-w-xl text-sm leading-6 text-white/80">{{ exampleOf(current) }}</span>
+            </span>
+          </span>
         </button>
 
         <div class="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -134,20 +157,77 @@ onMounted(loadSet);
 </template>
 
 <style scoped>
-.flashcard {
+.flashcard-scene {
+  position: relative;
   display: block;
   width: 100%;
   margin-top: 1.25rem;
-  min-height: 15rem;
+  min-height: 17rem;
+  border: 0;
   border-radius: 24px;
   corner-shape: squircle;
-  background: var(--ink);
-  padding: 2.25rem 1.5rem;
+  background: transparent;
+  padding: 0;
   text-align: center;
   color: #fff;
-  transition: translate .2s ease, box-shadow .2s ease;
+  perspective: 1200px;
 }
-.flashcard:hover { translate: 0 -2px; }
+
+.flashcard-inner {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  transition: transform .52s cubic-bezier(.2, .75, .25, 1);
+}
+
+.flashcard-inner.is-flipped { transform: rotateY(180deg); }
+
+.flashcard-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: inherit;
+  corner-shape: squircle;
+  padding: 2.5rem 1.5rem;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flashcard-front { background: var(--ink); }
+
+.flashcard-back {
+  background: #58cc02;
+  transform: rotateY(180deg);
+}
+
+.flashcard-cue {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .11);
+  padding: .45rem .65rem;
+  font-size: .68rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, .68);
+}
+
+.flashcard-cue-back {
+  background: rgba(38, 50, 56, .12);
+  color: rgba(255, 255, 255, .9);
+}
+
+.flashcard-scene:hover .flashcard-inner { transform: translateY(-2px); }
+.flashcard-scene:hover .flashcard-inner.is-flipped { transform: translateY(-2px) rotateY(180deg); }
 
 .rating-button {
   border-radius: 16px;
@@ -157,4 +237,15 @@ onMounted(loadSet);
 }
 .rating-button:hover:not(:disabled) { translate: 0 -2px; }
 .rating-button:disabled { opacity: .45; cursor: not-allowed; }
+
+@media (max-width: 639px) {
+  .flashcard-scene { min-height: 16rem; }
+  .flashcard-face { padding: 3.25rem 1.25rem 2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-inner { transition: none; }
+  .flashcard-scene:hover .flashcard-inner { transform: none; }
+  .flashcard-scene:hover .flashcard-inner.is-flipped { transform: rotateY(180deg); }
+}
 </style>
