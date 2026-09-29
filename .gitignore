@@ -11,3 +11,5 @@ coverage/
 backend/storage/
 backend/uploads/
 backend/prisma/dev.db
+
+deploy/backups/
