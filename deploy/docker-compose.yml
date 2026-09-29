@@ -108,6 +108,19 @@ services:
       start_period: 20s
       retries: 12
 
+  # Enabled by deploy.sh when CLOUDFLARE_TUNNEL_TOKEN is set. Hostnames are routed in the
+  # Cloudflare dashboard to http://web:3011 and http://api:3010 on this network.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    profiles: ["tunnel"]
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      web:
+        condition: service_healthy
+
 volumes:
   postgres-data:
   redis-data:
